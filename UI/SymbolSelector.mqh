@@ -57,6 +57,9 @@ bool CSymbolSelector::Initialize(int x, int y, int width)
    if(m_initialized)
       return true;
    
+   // Asegurarnos de que g_selector_created está en false al iniciar
+   g_selector_created = false;
+   
    if(!CreateModernSymbolSelector(x, y, width))
    {
       Print("Error al crear el selector de símbolos");
@@ -93,32 +96,28 @@ bool CreateModernSymbolSelector(int x, int y, int width)
          g_current_index = i;
    }
    
-   // Crear panel de encabezado del selector - con ancho reducido
+   // Usar todo el ancho disponible
+   g_selector_width = width;
+   
+   // Crear un panel único que ocupe todo el ancho
    if(!ObjectCreate(0, g_header_panel, OBJ_RECTANGLE_LABEL, 0, 0, 0))
       return false;
       
    ObjectSetInteger(0, g_header_panel, OBJPROP_XDISTANCE, x);
    ObjectSetInteger(0, g_header_panel, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, g_header_panel, OBJPROP_XSIZE, g_selector_width);
+   ObjectSetInteger(0, g_header_panel, OBJPROP_XSIZE, width);
    ObjectSetInteger(0, g_header_panel, OBJPROP_YSIZE, g_item_height);
    ObjectSetInteger(0, g_header_panel, OBJPROP_BGCOLOR, COLOR_BG_HEADER);
    ObjectSetInteger(0, g_header_panel, OBJPROP_BORDER_COLOR, COLOR_BORDER);
    ObjectSetInteger(0, g_header_panel, OBJPROP_CORNER, CORNER_LEFT_UPPER);
    
-   // Crear panel para los botones de navegación y texto SYMBOLS
-   string nav_panel = g_panel_name + "_NavPanel";
-   if(!ObjectCreate(0, nav_panel, OBJ_RECTANGLE_LABEL, 0, 0, 0))
-      return false;
-      
-   ObjectSetInteger(0, nav_panel, OBJPROP_XDISTANCE, x + g_selector_width);
-   ObjectSetInteger(0, nav_panel, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, nav_panel, OBJPROP_XSIZE, width - g_selector_width);
-   ObjectSetInteger(0, nav_panel, OBJPROP_YSIZE, g_item_height);
-   ObjectSetInteger(0, nav_panel, OBJPROP_BGCOLOR, COLOR_BG_HEADER);
-   ObjectSetInteger(0, nav_panel, OBJPROP_BORDER_COLOR, COLOR_BORDER);
-   ObjectSetInteger(0, nav_panel, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   // Calcular distribución de elementos
+   // 60% del ancho para el selector de símbolo a la izquierda
+   int selector_area_width = (int)(width * 0.6);
+   // 40% del ancho para los botones de navegación y texto a la derecha
+   int buttons_area_width = width - selector_area_width;
    
-   // Crear etiqueta para el símbolo actual
+   // Crear etiqueta para el símbolo actual - a la izquierda
    if(!ObjectCreate(0, g_header_label, OBJ_LABEL, 0, 0, 0))
       return false;
       
@@ -130,11 +129,11 @@ bool CreateModernSymbolSelector(int x, int y, int width)
    ObjectSetInteger(0, g_header_label, OBJPROP_FONTSIZE, 10);
    ObjectSetInteger(0, g_header_label, OBJPROP_ANCHOR, ANCHOR_LEFT);
    
-   // Crear botón de flecha
+   // Crear botón de flecha - al final del área del selector
    if(!ObjectCreate(0, g_arrow_button, OBJ_LABEL, 0, 0, 0))
       return false;
       
-   ObjectSetInteger(0, g_arrow_button, OBJPROP_XDISTANCE, x + g_selector_width - 15);
+   ObjectSetInteger(0, g_arrow_button, OBJPROP_XDISTANCE, x + selector_area_width - 15);
    ObjectSetInteger(0, g_arrow_button, OBJPROP_YDISTANCE, y + g_item_height/2);
    ObjectSetInteger(0, g_arrow_button, OBJPROP_COLOR, COLOR_TEXT);
    ObjectSetString(0, g_arrow_button, OBJPROP_TEXT, "▼"); // Flecha hacia abajo
@@ -142,15 +141,13 @@ bool CreateModernSymbolSelector(int x, int y, int width)
    ObjectSetInteger(0, g_arrow_button, OBJPROP_FONTSIZE, 10);
    ObjectSetInteger(0, g_arrow_button, OBJPROP_ANCHOR, ANCHOR_CENTER);
    
-   // Calcular espaciado para botones y texto
-   int nav_width = width - g_selector_width;
-   int button_x = x + g_selector_width;
+   // Crear botón de navegación izquierdo (<) - en el área de botones
+   int button_x_start = x + selector_area_width + 5;
    
-   // Crear botón de navegación izquierdo (<)
    if(!ObjectCreate(0, g_left_button, OBJ_LABEL, 0, 0, 0))
       return false;
       
-   ObjectSetInteger(0, g_left_button, OBJPROP_XDISTANCE, button_x + 15);
+   ObjectSetInteger(0, g_left_button, OBJPROP_XDISTANCE, button_x_start + 15);
    ObjectSetInteger(0, g_left_button, OBJPROP_YDISTANCE, y + g_item_height/2);
    ObjectSetInteger(0, g_left_button, OBJPROP_COLOR, COLOR_TEXT);
    ObjectSetString(0, g_left_button, OBJPROP_TEXT, "<");
@@ -158,11 +155,11 @@ bool CreateModernSymbolSelector(int x, int y, int width)
    ObjectSetInteger(0, g_left_button, OBJPROP_FONTSIZE, 12);
    ObjectSetInteger(0, g_left_button, OBJPROP_ANCHOR, ANCHOR_CENTER);
    
-   // Crear botón de navegación derecho (>)
+   // Crear botón de navegación derecho (>) - justo a la derecha del botón izquierdo
    if(!ObjectCreate(0, g_right_button, OBJ_LABEL, 0, 0, 0))
       return false;
       
-   ObjectSetInteger(0, g_right_button, OBJPROP_XDISTANCE, button_x + 40);
+   ObjectSetInteger(0, g_right_button, OBJPROP_XDISTANCE, button_x_start + 40);
    ObjectSetInteger(0, g_right_button, OBJPROP_YDISTANCE, y + g_item_height/2);
    ObjectSetInteger(0, g_right_button, OBJPROP_COLOR, COLOR_TEXT);
    ObjectSetString(0, g_right_button, OBJPROP_TEXT, ">");
@@ -170,17 +167,20 @@ bool CreateModernSymbolSelector(int x, int y, int width)
    ObjectSetInteger(0, g_right_button, OBJPROP_FONTSIZE, 12);
    ObjectSetInteger(0, g_right_button, OBJPROP_ANCHOR, ANCHOR_CENTER);
    
-   // Crear texto "SYMBOLS"
+   // Crear texto "SYMBOLS" - al final del área de botones
    if(!ObjectCreate(0, g_symbols_text, OBJ_LABEL, 0, 0, 0))
       return false;
       
-   ObjectSetInteger(0, g_symbols_text, OBJPROP_XDISTANCE, button_x + nav_width - 35);
+   ObjectSetInteger(0, g_symbols_text, OBJPROP_XDISTANCE, x + width - 40);
    ObjectSetInteger(0, g_symbols_text, OBJPROP_YDISTANCE, y + g_item_height/2);
    ObjectSetInteger(0, g_symbols_text, OBJPROP_COLOR, COLOR_TEXT);
    ObjectSetString(0, g_symbols_text, OBJPROP_TEXT, "SYMBOLS");
    ObjectSetString(0, g_symbols_text, OBJPROP_FONT, "Arial");
    ObjectSetInteger(0, g_symbols_text, OBJPROP_FONTSIZE, 8);
    ObjectSetInteger(0, g_symbols_text, OBJPROP_ANCHOR, ANCHOR_CENTER);
+   
+   // Indicar que el selector ha sido creado correctamente
+   g_selector_created = true;
    
    return true;
 }
@@ -226,13 +226,16 @@ void CSymbolSelector::ToggleDropdown(bool show)
       int x = (int)ObjectGetInteger(0, g_header_panel, OBJPROP_XDISTANCE);
       int y = (int)ObjectGetInteger(0, g_header_panel, OBJPROP_YDISTANCE) + g_item_height;
       
-      // Crear el panel dropdown con el mismo ancho que el panel del símbolo
+      // Calcular el ancho del dropdown para que sea solo la parte del selector (60% del ancho)
+      int dropdown_width = (int)(g_selector_width * 0.6);
+      
+      // Crear el panel dropdown con el ancho reducido
       if(!ObjectCreate(0, g_dropdown_panel, OBJ_RECTANGLE_LABEL, 0, 0, 0))
          return;
          
       ObjectSetInteger(0, g_dropdown_panel, OBJPROP_XDISTANCE, x);
       ObjectSetInteger(0, g_dropdown_panel, OBJPROP_YDISTANCE, y);
-      ObjectSetInteger(0, g_dropdown_panel, OBJPROP_XSIZE, g_selector_width);
+      ObjectSetInteger(0, g_dropdown_panel, OBJPROP_XSIZE, dropdown_width);
       ObjectSetInteger(0, g_dropdown_panel, OBJPROP_YSIZE, g_max_dropdown_items * g_item_height);
       ObjectSetInteger(0, g_dropdown_panel, OBJPROP_BGCOLOR, COLOR_BG_DROPDOWN);
       ObjectSetInteger(0, g_dropdown_panel, OBJPROP_BORDER_COLOR, COLOR_BORDER);
@@ -262,7 +265,7 @@ void CSymbolSelector::ToggleDropdown(bool show)
             
          ObjectSetInteger(0, item_panel, OBJPROP_XDISTANCE, x);
          ObjectSetInteger(0, item_panel, OBJPROP_YDISTANCE, y + i * g_item_height);
-         ObjectSetInteger(0, item_panel, OBJPROP_XSIZE, g_selector_width);
+         ObjectSetInteger(0, item_panel, OBJPROP_XSIZE, dropdown_width);
          ObjectSetInteger(0, item_panel, OBJPROP_YSIZE, g_item_height);
          ObjectSetInteger(0, item_panel, OBJPROP_BGCOLOR, symbol_idx == g_current_index ? COLOR_BG_HEADER : COLOR_BG_DROPDOWN);
          ObjectSetInteger(0, item_panel, OBJPROP_COLOR, COLOR_TEXT);
@@ -282,7 +285,7 @@ void CSymbolSelector::ToggleDropdown(bool show)
          if(!ObjectCreate(0, scroll_up_indicator, OBJ_BUTTON, 0, 0, 0))
             return;
             
-         ObjectSetInteger(0, scroll_up_indicator, OBJPROP_XDISTANCE, x + g_selector_width - 20);
+         ObjectSetInteger(0, scroll_up_indicator, OBJPROP_XDISTANCE, x + dropdown_width - 20);
          ObjectSetInteger(0, scroll_up_indicator, OBJPROP_YDISTANCE, y + 2);
          ObjectSetInteger(0, scroll_up_indicator, OBJPROP_XSIZE, 18);
          ObjectSetInteger(0, scroll_up_indicator, OBJPROP_YSIZE, 18);
@@ -297,7 +300,7 @@ void CSymbolSelector::ToggleDropdown(bool show)
          if(!ObjectCreate(0, scroll_down_indicator, OBJ_BUTTON, 0, 0, 0))
             return;
             
-         ObjectSetInteger(0, scroll_down_indicator, OBJPROP_XDISTANCE, x + g_selector_width - 20);
+         ObjectSetInteger(0, scroll_down_indicator, OBJPROP_XDISTANCE, x + dropdown_width - 20);
          ObjectSetInteger(0, scroll_down_indicator, OBJPROP_YDISTANCE, y + g_max_dropdown_items * g_item_height - 20);
          ObjectSetInteger(0, scroll_down_indicator, OBJPROP_XSIZE, 18);
          ObjectSetInteger(0, scroll_down_indicator, OBJPROP_YSIZE, 18);
@@ -366,6 +369,9 @@ void CSymbolSelector::ScrollDropdown(int direction)
    int x = (int)ObjectGetInteger(0, g_dropdown_panel, OBJPROP_XDISTANCE);
    int y = (int)ObjectGetInteger(0, g_dropdown_panel, OBJPROP_YDISTANCE);
    
+   // Calcular el ancho del dropdown (60% del ancho total)
+   int dropdown_width = (int)(g_selector_width * 0.6);
+   
    for(int i = 0; i < g_max_dropdown_items; i++)
    {
       int symbol_idx = g_dropdown_start_idx + i;
@@ -413,41 +419,38 @@ void CSymbolSelector::SelectSymbolFromDropdown(int item_index)
 //+------------------------------------------------------------------+
 void CSymbolSelector::UpdatePosition(int x, int y, int width)
 {
-   // Si el dropdown está visible, cerrar y volver a abrir después
-   bool was_visible = g_dropdown_visible;
-   if(was_visible)
-      ToggleDropdown(false);
+   if(!g_selector_created)
+      return;
+      
+   // Usar todo el ancho disponible
+   g_selector_width = width;
    
-   // Actualizar posición del selector
+   // Calcular distribución de elementos
+   int selector_area_width = (int)(width * 0.6);
+   int buttons_area_width = width - selector_area_width;
+   int button_x_start = x + selector_area_width + 5;
+   
+   // Actualizar posición y tamaño del panel de encabezado
    ObjectSetInteger(0, g_header_panel, OBJPROP_XDISTANCE, x);
    ObjectSetInteger(0, g_header_panel, OBJPROP_YDISTANCE, y);
+   ObjectSetInteger(0, g_header_panel, OBJPROP_XSIZE, width);
    
-   // Actualizar posición del panel de navegación
-   string nav_panel = g_panel_name + "_NavPanel";
-   ObjectSetInteger(0, nav_panel, OBJPROP_XDISTANCE, x + g_selector_width);
-   ObjectSetInteger(0, nav_panel, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, nav_panel, OBJPROP_XSIZE, width - g_selector_width);
-   
-   // Actualizar posición de las etiquetas y botones
+   // Actualizar posición del símbolo - a la izquierda
    ObjectSetInteger(0, g_header_label, OBJPROP_XDISTANCE, x + 10);
    ObjectSetInteger(0, g_header_label, OBJPROP_YDISTANCE, y + g_item_height/2);
    
-   ObjectSetInteger(0, g_arrow_button, OBJPROP_XDISTANCE, x + g_selector_width - 15);
+   // Actualizar posición del botón de flecha
+   ObjectSetInteger(0, g_arrow_button, OBJPROP_XDISTANCE, x + selector_area_width - 15);
    ObjectSetInteger(0, g_arrow_button, OBJPROP_YDISTANCE, y + g_item_height/2);
    
-   int button_x = x + g_selector_width;
-   
-   ObjectSetInteger(0, g_left_button, OBJPROP_XDISTANCE, button_x + 15);
+   // Actualizar posición de los botones de navegación
+   ObjectSetInteger(0, g_left_button, OBJPROP_XDISTANCE, button_x_start + 15);
    ObjectSetInteger(0, g_left_button, OBJPROP_YDISTANCE, y + g_item_height/2);
    
-   ObjectSetInteger(0, g_right_button, OBJPROP_XDISTANCE, button_x + 40);
+   ObjectSetInteger(0, g_right_button, OBJPROP_XDISTANCE, button_x_start + 40);
    ObjectSetInteger(0, g_right_button, OBJPROP_YDISTANCE, y + g_item_height/2);
    
-   int nav_width = width - g_selector_width;
-   ObjectSetInteger(0, g_symbols_text, OBJPROP_XDISTANCE, button_x + nav_width - 35);
+   // Actualizar posición del texto "SYMBOLS"
+   ObjectSetInteger(0, g_symbols_text, OBJPROP_XDISTANCE, x + width - 40);
    ObjectSetInteger(0, g_symbols_text, OBJPROP_YDISTANCE, y + g_item_height/2);
-   
-   // Si el dropdown estaba visible, volver a abrirlo en la nueva posición
-   if(was_visible)
-      ToggleDropdown(true);
 } 

@@ -42,7 +42,8 @@ bool g_dropdown_visible = false; // Estado del dropdown
 int g_max_dropdown_items = 15;   // Máximo número de elementos visibles en el dropdown
 int g_dropdown_start_idx = 0;    // Índice inicial para la visualización del dropdown
 int g_item_height = 22;          // Altura de cada elemento en píxeles
-int g_selector_width = 150;      // Ancho del selector de símbolos
+int g_selector_width = 350;      // Ancho del selector de símbolos (usará el ancho total del panel)
+bool g_selector_created = false; // Indica si el selector ha sido creado correctamente
 
 // Variables para el sistema de tooltips
 bool g_help_active = false;          // Estado del botón de ayuda

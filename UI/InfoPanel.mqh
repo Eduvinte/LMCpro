@@ -90,10 +90,10 @@ bool CInfoPanel::CreateInfoPanel(int x, int y, int width)
    g_atr_label = g_panel_name + "_ATRLabel";
    g_atr_value = g_panel_name + "_ATRValue";
    
-   // Mantener la altura actual
-   int info_height = 36;
+   // Altura fija para el panel de información
+   int info_height = 24;
    
-   // Crear el panel de fondo (negro)
+   // Crear el panel de fondo
    if(!ObjectCreate(0, g_info_panel, OBJ_RECTANGLE_LABEL, 0, 0, 0))
       return false;
       
@@ -109,8 +109,11 @@ bool CInfoPanel::CreateInfoPanel(int x, int y, int width)
    // Ajustar el posicionamiento vertical
    int text_y = y + info_height/2; // Mitad de la altura
    
+   // Distribuir elementos equitativamente a lo largo del ancho
+   int section_width = width / 3;
+   
    // 1. SPREAD - Alineado a la izquierda
-   int spread_x = x + 15;
+   int spread_x = x + section_width/2 - 30;
    
    if(!ObjectCreate(0, g_spread_label, OBJ_LABEL, 0, 0, 0))
       return false;
@@ -135,7 +138,7 @@ bool CInfoPanel::CreateInfoPanel(int x, int y, int width)
    ObjectSetInteger(0, g_spread_value, OBJPROP_ANCHOR, ANCHOR_LEFT);
    
    // 2. ATR - Centrado en el panel
-   int atr_x = x + width/2 - 20;
+   int atr_x = x + section_width + section_width/2 - 15;
    
    if(!ObjectCreate(0, g_atr_label, OBJ_LABEL, 0, 0, 0))
       return false;
@@ -159,8 +162,8 @@ bool CInfoPanel::CreateInfoPanel(int x, int y, int width)
    ObjectSetInteger(0, g_atr_value, OBJPROP_FONTSIZE, 9);
    ObjectSetInteger(0, g_atr_value, OBJPROP_ANCHOR, ANCHOR_LEFT);
    
-   // 3. El engranaje a la misma altura
-   int gear_x = x + width - 30;
+   // 3. El engranaje en la tercera sección
+   int gear_x = x + 2*section_width + section_width/2;
    int gear_y = text_y;
    
    // Crear el icono del engranaje
@@ -235,8 +238,11 @@ void CInfoPanel::UpdatePosition(int x, int y, int width)
    int info_height = (int)ObjectGetInteger(0, g_info_panel, OBJPROP_YSIZE);
    int text_y = y + info_height/2;
    
+   // Distribuir elementos equitativamente
+   int section_width = width / 3;
+   
    // Actualizar posición de las etiquetas del spread
-   int spread_x = x + 15;
+   int spread_x = x + section_width/2 - 30;
    ObjectSetInteger(0, g_spread_label, OBJPROP_XDISTANCE, spread_x);
    ObjectSetInteger(0, g_spread_label, OBJPROP_YDISTANCE, text_y);
    
@@ -244,7 +250,7 @@ void CInfoPanel::UpdatePosition(int x, int y, int width)
    ObjectSetInteger(0, g_spread_value, OBJPROP_YDISTANCE, text_y);
    
    // Actualizar posición de las etiquetas del ATR
-   int atr_x = x + width/2 - 20;
+   int atr_x = x + section_width + section_width/2 - 15;
    ObjectSetInteger(0, g_atr_label, OBJPROP_XDISTANCE, atr_x);
    ObjectSetInteger(0, g_atr_label, OBJPROP_YDISTANCE, text_y);
    
@@ -252,8 +258,13 @@ void CInfoPanel::UpdatePosition(int x, int y, int width)
    ObjectSetInteger(0, g_atr_value, OBJPROP_YDISTANCE, text_y);
    
    // Actualizar posición del icono de engranaje
-   int gear_x = x + width - 30;
-   CreateGearIconCentered(gear_x, text_y);
+   int gear_x = x + 2*section_width + section_width/2;
+   string gear_icon = g_panel_name + "_GearIcon";
+   if(ObjectFind(0, gear_icon) >= 0)
+   {
+      // Actualizar posición centrada
+      CreateGearIconCentered(gear_x, text_y);
+   }
 }
 
 //+------------------------------------------------------------------+
