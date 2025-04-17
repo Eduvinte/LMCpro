@@ -117,15 +117,27 @@ void CEventHandler::OnChartEvent(const int id, const long &lparam, const double 
    {
       Print("Clic en objeto: ", sparam);
       
-      // Si hacemos clic en el botón de arrastre
-      if(sparam == g_drag_button && m_panel != NULL)
+      // Verificar si el clic fue en un área interactiva y redirigir al botón correspondiente
+      string button_to_handle = sparam;
+      
+      // Comprobar si el objeto clicado es un área interactiva
+      if(StringFind(sparam, "_area") > 0)
       {
+         // Obtener el nombre del botón original quitando "_area"
+         button_to_handle = StringSubstr(sparam, 0, StringLen(sparam) - 5);
+         Print("Redirección de área interactiva: ", sparam, " -> ", button_to_handle);
+      }
+      
+      // Si hacemos clic en el botón de arrastre
+      if(button_to_handle == g_drag_button && m_panel != NULL)
+      {
+         Print("DEBUG: Activando ToggleDragMode desde botón de arrastre");
          m_panel.ToggleDragMode();
          return;
       }
       
       // Si el clic es en la barra de título
-      if(sparam == g_title_panel && m_panel != NULL)
+      if(button_to_handle == g_title_panel && m_panel != NULL)
       {
          if(g_is_dragging)
          {
@@ -148,43 +160,43 @@ void CEventHandler::OnChartEvent(const int id, const long &lparam, const double 
       }
       
       // Verificar explícitamente si es el botón de ayuda
-      if(sparam == g_help_button && m_tooltip != NULL)
+      if(button_to_handle == g_help_button && m_tooltip != NULL)
       {
          m_tooltip.ToggleHelpMode();
          return;
       }
       
       // Verificar si es el botón de tema
-      if(sparam == g_theme_button && m_themeManager != NULL)
+      if(button_to_handle == g_theme_button && m_themeManager != NULL)
       {
          m_themeManager.ToggleTheme();
          return;
       }
       
       // Verificar si es el encabezado del selector o el botón de flecha
-      if((sparam == g_header_panel || sparam == g_arrow_button) && m_symbolSelector != NULL)
+      if((button_to_handle == g_header_panel || button_to_handle == g_arrow_button) && m_symbolSelector != NULL)
       {
          m_symbolSelector.ToggleDropdown(!g_dropdown_visible);
          return;
       }
       
       // Verificar si son los botones de navegación
-      if(sparam == g_left_button && m_symbolSelector != NULL)
+      if(button_to_handle == g_left_button && m_symbolSelector != NULL)
       {
          m_symbolSelector.UpdateSymbol(-1);
          return;
       }
-      if(sparam == g_right_button && m_symbolSelector != NULL)
+      if(button_to_handle == g_right_button && m_symbolSelector != NULL)
       {
          m_symbolSelector.UpdateSymbol(1);
          return;
       }
       
       // Verificar si es un ítem del dropdown
-      if(StringFind(sparam, g_dropdown_panel + "_Item") == 0 && m_symbolSelector != NULL)
+      if(StringFind(button_to_handle, g_dropdown_panel + "_Item") == 0 && m_symbolSelector != NULL)
       {
          // Extraer el índice del ítem
-         string idx_str = StringSubstr(sparam, StringLen(g_dropdown_panel + "_Item"));
+         string idx_str = StringSubstr(button_to_handle, StringLen(g_dropdown_panel + "_Item"));
          int item_idx = (int)StringToInteger(idx_str);
          
          m_symbolSelector.SelectSymbolFromDropdown(item_idx);
@@ -192,27 +204,28 @@ void CEventHandler::OnChartEvent(const int id, const long &lparam, const double 
       }
       
       // Verificar si son los botones de scroll
-      if(sparam == g_dropdown_panel + "_ScrollUp" && m_symbolSelector != NULL)
+      if(button_to_handle == g_dropdown_panel + "_ScrollUp" && m_symbolSelector != NULL)
       {
          m_symbolSelector.ScrollDropdown(-1);
          return;
       }
-      if(sparam == g_dropdown_panel + "_ScrollDown" && m_symbolSelector != NULL)
+      if(button_to_handle == g_dropdown_panel + "_ScrollDown" && m_symbolSelector != NULL)
       {
          m_symbolSelector.ScrollDropdown(1);
          return;
       }
       
       // Verificar si es el botón de expandir
-      if(sparam == g_expand_button && m_panel != NULL)
+      if(button_to_handle == g_expand_button && m_panel != NULL)
       {
          m_panel.ToggleExpand();
          return;
       }
       
       // Verificar si es el botón de cerrar
-      if(sparam == g_close_button && m_panel != NULL)
+      if(button_to_handle == g_close_button && m_panel != NULL)
       {
+         Print("DEBUG: Cerrando panel desde botón de cierre");
          m_panel.ClosePanel();
          return;
       }

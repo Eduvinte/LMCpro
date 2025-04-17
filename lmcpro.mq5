@@ -10,6 +10,8 @@
 
 // Añadir recurso de imagen para el engranaje
 #resource "\\Images\\gear_icon.bmp"
+// Añadir recurso de imagen para el título
+#resource "\\Images\\iconlmcpro.bmp"
 
 // Incluir módulos del sistema
 #include <LMCPro\Core\Constants.mqh>
@@ -58,7 +60,7 @@ int OnInit()
       return INIT_FAILED;
    }
    
-   if(!g_symbolSelector.Initialize(g_panelX + 10, g_panelY + 35, g_panelWidth - 20))
+   if(!g_symbolSelector.Initialize(g_panelX, g_panelY + 24, g_panelWidth))
    {
       Print("Error: No se pudo inicializar el selector de símbolos");
       return INIT_FAILED;
@@ -78,7 +80,7 @@ int OnInit()
       return INIT_FAILED;
    }
    
-   if(!g_infoPanel.Initialize(g_panelX + 10, g_panelY + 70, g_panelWidth - 20, 120))
+   if(!g_infoPanel.Initialize(g_panelX, g_panelY + 24 + g_item_height, g_panelWidth, 120))
    {
       Print("Error: No se pudo inicializar el panel de información");
       return INIT_FAILED;
