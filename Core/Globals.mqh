@@ -137,6 +137,17 @@ string g_collapseButtonName = OBJECT_PREFIX + "CollapseButton";
 bool g_hasError = false;
 string g_lastErrorMessage = "";
 
+// Variables para el panel de configuración
+string g_settings_panel = "Settings_Panel";       // Nombre del panel de configuración
+string g_settings_title = "Settings_Title";       // Barra de título del panel de configuración
+bool g_settings_visible = false;                  // Visibilidad del panel de configuración
+int g_settings_x = 0;                             // Posición X del panel de configuración
+int g_settings_y = 0;                             // Posición Y del panel de configuración
+int g_settings_width = 250;                       // Ancho del panel de configuración
+int g_settings_height = 350;                      // Altura del panel de configuración
+color g_settings_bg_color = C'45,45,68';          // Color de fondo del panel
+color g_settings_title_color = C'77,118,201';     // Color de la barra de título
+
 //+------------------------------------------------------------------+
 //| Función para actualizar colores según el tema                    |
 //+------------------------------------------------------------------+
