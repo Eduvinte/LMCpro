@@ -339,17 +339,18 @@ void CInfoPanel::UpdateGearIconPosition()
 //+------------------------------------------------------------------+
 void CInfoPanel::CreateGearIconCentered(int center_x, int center_y)
 {
-   // Tamaño del icono
-   int gear_size = 18;
+   // Tamaño del icono (normalmente 16x16 o similar)
+   int icon_width = 16;
+   int icon_height = 16;
    
-   // Calcular posición para que el icono quede centrado en las coordenadas
-   int gear_x = center_x - gear_size/2;
-   int gear_y = center_y - gear_size/2;
+   // Calcular posición para centrar el icono
+   int gear_x = center_x - (icon_width / 2);
+   int gear_y = center_y - (icon_height / 2);
    
-   // Eliminar objetos anteriores
+   // Eliminar icono existente si lo hay
    ObjectDelete(0, g_gear_icon);
    
-   // Crear bitmap desde el recurso incorporado
+   // Crear el icono de engranaje (ajustar según la imagen real disponible)
    ObjectCreate(0, g_gear_icon, OBJ_BITMAP_LABEL, 0, 0, 0);
    ObjectSetString(0, g_gear_icon, OBJPROP_BMPFILE, "::Images\\gear_icon.bmp");
    ObjectSetInteger(0, g_gear_icon, OBJPROP_XDISTANCE, gear_x);
@@ -357,4 +358,17 @@ void CInfoPanel::CreateGearIconCentered(int center_x, int center_y)
    ObjectSetInteger(0, g_gear_icon, OBJPROP_CORNER, CORNER_LEFT_UPPER);
    ObjectSetInteger(0, g_gear_icon, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
    ObjectSetInteger(0, g_gear_icon, OBJPROP_ZORDER, 999);
+   
+   // Añadir un área interactiva más grande alrededor del icono para facilitar el clic
+   string area_name = g_gear_icon + "_area";
+   ObjectCreate(0, area_name, OBJ_RECTANGLE_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, area_name, OBJPROP_XDISTANCE, gear_x - 5);
+   ObjectSetInteger(0, area_name, OBJPROP_YDISTANCE, gear_y - 5);
+   ObjectSetInteger(0, area_name, OBJPROP_XSIZE, icon_width + 10);
+   ObjectSetInteger(0, area_name, OBJPROP_YSIZE, icon_height + 10);
+   ObjectSetInteger(0, area_name, OBJPROP_BGCOLOR, clrNONE);
+   ObjectSetInteger(0, area_name, OBJPROP_BORDER_COLOR, clrNONE);
+   ObjectSetInteger(0, area_name, OBJPROP_BACK, true);
+   ObjectSetInteger(0, area_name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, area_name, OBJPROP_ZORDER, 998); // Un nivel por debajo del icono
 } 

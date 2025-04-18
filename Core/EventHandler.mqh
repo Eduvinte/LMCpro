@@ -37,6 +37,11 @@ public:
    void              SetThemeManager(CThemeManager* themeManager) { m_themeManager = themeManager; }
    void              OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam);
    void              OnTimer();
+   
+   // Métodos para el panel de configuración
+   void              ToggleSettingsPanel();
+   void              ShowSettingsPanel();
+   void              HideSettingsPanel();
 };
 
 //+------------------------------------------------------------------+
@@ -126,6 +131,36 @@ void CEventHandler::OnChartEvent(const int id, const long &lparam, const double 
          // Obtener el nombre del botón original quitando "_area"
          button_to_handle = StringSubstr(sparam, 0, StringLen(sparam) - 5);
          Print("Redirección de área interactiva: ", sparam, " -> ", button_to_handle);
+      }
+      
+      // Verificar explícitamente si es cualquier objeto relacionado con el botón de cierre
+      if(StringFind(button_to_handle, g_settings_panel + "_CloseBtn") >= 0 || 
+         button_to_handle == g_settings_panel + "_CloseBtn")
+      {
+         Print("DEBUG: Cerrando panel de configuración desde botón X");
+         HideSettingsPanel();
+         return;
+      }
+      
+      // Verificar si el clic es en la barra de título del panel de configuración
+      if(button_to_handle == g_settings_title)
+      {
+         // Obtener la posición del clic
+         if(g_mouse_x >= g_settings_x + g_settings_width - 30)
+         {
+            // Si el clic está en el área cercana al botón X (últimos 30px del ancho)
+            Print("DEBUG: Cerrando panel de configuración desde área de la X en barra de título");
+            HideSettingsPanel();
+            return;
+         }
+      }
+      
+      // Verificar si es el icono de engranaje
+      if(button_to_handle == g_gear_icon)
+      {
+         Print("DEBUG: Abriendo panel de configuración desde icono de engranaje");
+         ToggleSettingsPanel();
+         return;
       }
       
       // Si hacemos clic en el botón de arrastre
@@ -313,4 +348,145 @@ void CEventHandler::OnTimer()
          }
       }
    }
+}
+
+//+------------------------------------------------------------------+
+//| Métodos para el panel de configuración                            |
+//+------------------------------------------------------------------+
+void CEventHandler::ToggleSettingsPanel()
+{
+   if(g_settings_visible)
+      HideSettingsPanel();
+   else
+      ShowSettingsPanel();
+}
+
+void CEventHandler::ShowSettingsPanel()
+{
+   if(g_settings_visible) return; // Ya está visible
+   
+   Print("Mostrando panel de configuración");
+   g_settings_visible = true;
+   
+   // Calcular posición para el panel de configuración
+   int main_panel_x = (int)ObjectGetInteger(0, g_panel_name, OBJPROP_XDISTANCE);
+   int main_panel_y = (int)ObjectGetInteger(0, g_panel_name, OBJPROP_YDISTANCE);
+   int main_panel_width = (int)ObjectGetInteger(0, g_panel_name, OBJPROP_XSIZE);
+   
+   // Posicionar a la derecha del panel principal
+   g_settings_x = main_panel_x + main_panel_width + 10;
+   g_settings_y = main_panel_y + 35; // Alinear con el área principal del panel
+   
+   // Dimensiones y colores
+   g_settings_width = 250;
+   g_settings_height = 350;
+   g_settings_bg_color = C'45,45,68';
+   g_settings_title_color = C'77,118,201';
+   
+   // Crear panel de fondo
+   ObjectCreate(0, g_settings_panel, OBJ_RECTANGLE_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, g_settings_panel, OBJPROP_XDISTANCE, g_settings_x);
+   ObjectSetInteger(0, g_settings_panel, OBJPROP_YDISTANCE, g_settings_y);
+   ObjectSetInteger(0, g_settings_panel, OBJPROP_XSIZE, g_settings_width);
+   ObjectSetInteger(0, g_settings_panel, OBJPROP_YSIZE, g_settings_height);
+   ObjectSetInteger(0, g_settings_panel, OBJPROP_BGCOLOR, g_settings_bg_color);
+   ObjectSetInteger(0, g_settings_panel, OBJPROP_BORDER_COLOR, clrWhite);
+   ObjectSetInteger(0, g_settings_panel, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, g_settings_panel, OBJPROP_ZORDER, 100);
+   
+   // Crear barra de título
+   ObjectCreate(0, g_settings_title, OBJ_RECTANGLE_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, g_settings_title, OBJPROP_XDISTANCE, g_settings_x);
+   ObjectSetInteger(0, g_settings_title, OBJPROP_YDISTANCE, g_settings_y);
+   ObjectSetInteger(0, g_settings_title, OBJPROP_XSIZE, g_settings_width);
+   ObjectSetInteger(0, g_settings_title, OBJPROP_YSIZE, 25);
+   ObjectSetInteger(0, g_settings_title, OBJPROP_BGCOLOR, g_settings_title_color);
+   ObjectSetInteger(0, g_settings_title, OBJPROP_BORDER_COLOR, clrNONE);
+   ObjectSetInteger(0, g_settings_title, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, g_settings_title, OBJPROP_ZORDER, 101);
+   
+   // Crear texto del título
+   string settings_label = g_settings_panel + "_Label";
+   ObjectCreate(0, settings_label, OBJ_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, settings_label, OBJPROP_XDISTANCE, g_settings_x + 10);
+   ObjectSetInteger(0, settings_label, OBJPROP_YDISTANCE, g_settings_y + 13);
+   ObjectSetInteger(0, settings_label, OBJPROP_COLOR, clrWhite);
+   ObjectSetString(0, settings_label, OBJPROP_TEXT, "Configuración");
+   ObjectSetString(0, settings_label, OBJPROP_FONT, "Arial");
+   ObjectSetInteger(0, settings_label, OBJPROP_FONTSIZE, 10);
+   ObjectSetInteger(0, settings_label, OBJPROP_ANCHOR, ANCHOR_LEFT);
+   
+   // Crear botón de cierre con ZORDER mayor para que reciba los clics primero
+   string close_btn = g_settings_panel + "_CloseBtn";
+   ObjectCreate(0, close_btn, OBJ_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, close_btn, OBJPROP_XDISTANCE, g_settings_x + g_settings_width - 15);
+   ObjectSetInteger(0, close_btn, OBJPROP_YDISTANCE, g_settings_y + 13);
+   ObjectSetInteger(0, close_btn, OBJPROP_COLOR, clrWhite);
+   ObjectSetString(0, close_btn, OBJPROP_TEXT, "✖");
+   ObjectSetString(0, close_btn, OBJPROP_FONT, "Arial");
+   ObjectSetInteger(0, close_btn, OBJPROP_FONTSIZE, 10);
+   ObjectSetInteger(0, close_btn, OBJPROP_ANCHOR, ANCHOR_CENTER);
+   ObjectSetInteger(0, close_btn, OBJPROP_ZORDER, 102); // Mayor ZORDER que la barra de título
+   
+   // Área interactiva para el botón de cierre - Hacerla más grande y mejor posicionada
+   string close_area = close_btn + "_area";
+   ObjectCreate(0, close_area, OBJ_RECTANGLE_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, close_area, OBJPROP_XDISTANCE, g_settings_x + g_settings_width - 35);
+   ObjectSetInteger(0, close_area, OBJPROP_YDISTANCE, g_settings_y);
+   ObjectSetInteger(0, close_area, OBJPROP_XSIZE, 35);
+   ObjectSetInteger(0, close_area, OBJPROP_YSIZE, 25);
+   ObjectSetInteger(0, close_area, OBJPROP_BGCOLOR, clrNONE);
+   ObjectSetInteger(0, close_area, OBJPROP_BORDER_COLOR, clrNONE);
+   ObjectSetInteger(0, close_area, OBJPROP_BACK, true);
+   ObjectSetInteger(0, close_area, OBJPROP_ZORDER, 103); // El ZORDER más alto para detectar los clics primero
+   
+   ChartRedraw();
+}
+
+void CEventHandler::HideSettingsPanel()
+{
+   if(!g_settings_visible) return; // Ya está oculto
+   
+   Print("Ocultando panel de configuración");
+   g_settings_visible = false;
+   
+   // Eliminar todos los objetos del panel de configuración
+   int totalObjects = ObjectsTotal(0);
+   for(int i = totalObjects - 1; i >= 0; i--)
+   {
+      string name = ObjectName(0, i);
+      
+      // Eliminar el panel principal y todos sus componentes
+      if(StringFind(name, g_settings_panel) >= 0)
+      {
+         ObjectDelete(0, name);
+      }
+      
+      // Eliminar explícitamente la barra de título y sus componentes
+      if(StringFind(name, g_settings_title) >= 0)
+      {
+         ObjectDelete(0, name);
+      }
+      
+      // Eliminar cualquier objeto relacionado con el botón de cierre
+      if(StringFind(name, g_settings_panel + "_CloseBtn") >= 0)
+      {
+         ObjectDelete(0, name);
+      }
+      
+      // Eliminar todas las etiquetas y áreas interactivas relacionadas
+      if(StringFind(name, g_settings_panel + "_Label") >= 0)
+      {
+         ObjectDelete(0, name);
+      }
+   }
+   
+   // Eliminar explícitamente los objetos principales por nombre
+   ObjectDelete(0, g_settings_panel);
+   ObjectDelete(0, g_settings_title);
+   ObjectDelete(0, g_settings_panel + "_Label");
+   ObjectDelete(0, g_settings_panel + "_CloseBtn");
+   ObjectDelete(0, g_settings_panel + "_CloseBtn_area");
+   
+   ChartRedraw();
 } 
