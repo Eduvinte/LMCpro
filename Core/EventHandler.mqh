@@ -25,6 +25,7 @@ private:
    CTooltip*         m_tooltip;
    CInfoPanel*       m_infoPanel;
    CThemeManager*    m_themeManager;
+   static datetime   last_drag_activation_storage; // Almacena hora de activación del modo arrastre
    
 public:
                      CEventHandler();
@@ -65,6 +66,9 @@ CEventHandler::~CEventHandler()
    // No borrar los objetos que sólo se han referenciado
 }
 
+// Inicializar variable estática
+datetime CEventHandler::last_drag_activation_storage = 0;
+
 //+------------------------------------------------------------------+
 //| Inicializar                                                       |
 //+------------------------------------------------------------------+
@@ -100,14 +104,14 @@ void CEventHandler::OnChartEvent(const int id, const long &lparam, const double 
       g_mouse_y = (int)dparam;
       
       // Si el modo arrastre está activado, mover el panel con el mouse
-      if(g_drag_mode && m_panel != NULL)
+      if((g_is_dragging || g_drag_mode) && m_panel != NULL)
       {
-         // Usar el offset para mantener la posición relativa inicial
-         int new_x = g_mouse_x - g_drag_offset_x;
-         int new_y = g_mouse_y - g_drag_offset_y;
+         // Usar DragPanel que ahora usa MoveAllPanelComponents internamente
+         m_panel.DragPanel(g_mouse_x, g_mouse_y);
          
-         // Mover el panel a la nueva posición
-         m_panel.MovePanel(new_x, new_y);
+         // Forzar redibujado del gráfico
+         ChartRedraw();
+         return; // Importante: retornar para evitar otro procesamiento
       }
       
       // Verificar tooltips si el modo ayuda está activo
@@ -168,7 +172,25 @@ void CEventHandler::OnChartEvent(const int id, const long &lparam, const double 
       {
          Print("DEBUG: Activando ToggleDragMode desde botón de arrastre");
          m_panel.ToggleDragMode();
-         return;
+         
+         // Guardar hora de activación para evitar desactivación inmediata
+         last_drag_activation_storage = (datetime)GetTickCount64();
+         
+         ChartRedraw(); // Asegurar redibujado
+         return; // IMPORTANTE: Retornar inmediatamente para evitar otro procesamiento
+      }
+      
+      // Si hacemos clic en el área del botón de arrastre (área interactiva)
+      if(button_to_handle == g_drag_button + "_area" && m_panel != NULL)
+      {
+         Print("DEBUG: Activando ToggleDragMode desde área interactiva del botón de arrastre");
+         m_panel.ToggleDragMode();
+         
+         // Guardar hora de activación para evitar desactivación inmediata
+         last_drag_activation_storage = (datetime)GetTickCount64();
+         
+         ChartRedraw();
+         return; // IMPORTANTE: Retornar inmediatamente 
       }
       
       // Si el clic es en la barra de título
@@ -269,15 +291,17 @@ void CEventHandler::OnChartEvent(const int id, const long &lparam, const double 
       // Verificar si es un clic en alguno de los botones de pestañas
       if(m_panel != NULL && m_panel.GetTabManager() != NULL)
       {
+         CTabManager* tabManager = m_panel.GetTabManager(); // Obtener puntero
          // Si el TabManager procesa el evento (devuelve true), significa que se cambió la pestaña
-         if(m_panel.GetTabManager().OnClick(button_to_handle))
+         if(tabManager.OnClick(button_to_handle))
          {
-            // Aquí puedes añadir cualquier lógica adicional cuando cambia la pestaña
-            Print("Cambio de pestaña detectado: ", button_to_handle);
-            
-            // Por ahora solo refrescamos el gráfico
-            ChartRedraw();
-            return;
+            Print("Cambio de pestaña detectado por EventHandler: ", button_to_handle);
+
+            // <<< Llamar a UpdateActiveView en CPanel >>>
+            m_panel.UpdateActiveView(tabManager.GetActiveTab());
+            // Ya no necesitamos ChartRedraw() aquí, UpdateActiveView lo hace
+
+            return; // Evento manejado
          }
       }
       // <<< FIN NUEVOS EVENTOS >>>
@@ -287,9 +311,21 @@ void CEventHandler::OnChartEvent(const int id, const long &lparam, const double 
    if(id == CHARTEVENT_CLICK)
    {
       // Si estamos en modo arrastre, desactivarlo con cualquier clic en el chart
-      if(g_is_dragging && g_drag_toggle_mode && m_panel != NULL)
+      // PERO solo si no es el clic inicial que activó el modo arrastre
+      if((g_is_dragging || g_drag_mode) && g_drag_toggle_mode && m_panel != NULL)
       {
-         m_panel.StopDragging();
+         // Verificar si este clic es parte de la misma acción que activó el modo arrastre
+         datetime current_time = (datetime)GetTickCount64();
+         
+         // Si han pasado menos de 100ms desde la activación, ignorar este clic
+         if(current_time - last_drag_activation_storage < 100)
+         {
+            Print("Ignorando desactivación inmediata del modo arrastre");
+            return;
+         }
+         
+         if (g_drag_mode) m_panel.ToggleDragMode();
+         else m_panel.StopDragging();
          return;
       }
    }

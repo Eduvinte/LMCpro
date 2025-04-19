@@ -10,6 +10,7 @@
 #include "../Utils/ColorUtils.mqh"
 #include "ThemeManager.mqh"
 #include "TabManager.mqh"
+#include "TradeView.mqh"
 
 //+------------------------------------------------------------------+
 //| Clase para gestionar el panel principal                           |
@@ -20,6 +21,14 @@ private:
    CThemeManager*    m_themeManager;
    bool              m_initialized;
    CTabManager*      m_tabManager;
+   CTradeView*       m_tradeView;
+   
+   int               m_contentAreaX;
+   int               m_contentAreaY;
+   int               m_contentAreaWidth;
+   int               m_contentAreaHeight;
+   
+   void              CalculateContentArea();
    
 public:
                      CPanel(CThemeManager* themeManager);
@@ -38,6 +47,7 @@ public:
    void              ToggleDragMode();
    void              ClosePanel();
    CTabManager*      GetTabManager() { return m_tabManager; }
+   void              UpdateActiveView(ENUM_ACTIVE_TAB activeTab);
 };
 
 //+------------------------------------------------------------------+
@@ -52,6 +62,13 @@ CPanel::CPanel(CThemeManager* themeManager)
    {
        Print("Error: No se pudo crear CTabManager");
    }
+   m_tradeView = new CTradeView(m_themeManager);
+   if(m_tradeView == NULL) Print("Error: No se pudo crear CTradeView");
+   
+   m_contentAreaX = 0;
+   m_contentAreaY = 0;
+   m_contentAreaWidth = 0;
+   m_contentAreaHeight = 0;
 }
 
 //+------------------------------------------------------------------+
@@ -64,6 +81,7 @@ CPanel::~CPanel()
       delete m_tabManager;
       m_tabManager = NULL;
    }
+   if(m_tradeView != NULL) delete m_tradeView;
 }
 
 //+------------------------------------------------------------------+
@@ -93,14 +111,33 @@ bool CPanel::Initialize(int x, int y, int width, int height)
    
    int title_height = 24;
    int info_section_height = g_item_height;
-   int vertical_offset = 25;
+   int vertical_offset = 20;
    int tabs_y = y + title_height + info_section_height + vertical_offset;
 
    if(m_tabManager != NULL && !m_tabManager.Initialize(x, tabs_y, width))
    {
        Print("Error al inicializar el TabManager");
+       return false;
    }
    
+   CalculateContentArea();
+
+   if(m_tradeView != NULL && !m_tradeView.Initialize(m_contentAreaX, m_contentAreaY, m_contentAreaWidth, m_contentAreaHeight))
+   {
+       Print("Error al inicializar TradeView");
+       return false;
+   }
+
+   if(m_tabManager != NULL)
+   {
+      UpdateActiveView(m_tabManager.GetActiveTab());
+   }
+   else
+   {
+      Print("Error: TabManager no está inicializado para establecer la vista activa.");
+      return false;
+   }
+
    m_initialized = true;
    return true;
 }
@@ -427,39 +464,116 @@ void CPanel::MoveAllPanelComponents(int dx, int dy)
 {
    if(dx == 0 && dy == 0) return; // No hacer nada si no hay desplazamiento
    
+   // Actualizar coordenadas base del área de contenido antes de mover
+   m_contentAreaX += dx;
+   m_contentAreaY += dy;
+
    // 1. Obtenemos todos los objetos gráficos
    int total = ObjectsTotal(0);
    
-   // 2. Mover cada objeto que tenga nuestro prefijo (g_panel_name) o LMCpro
-   for(int i = 0; i < total; i++)
+   // 2. Mover los elementos principales del panel y el título explícitamente
+   string panel_elements[] = {
+       g_panel_name,
+       g_title_panel,
+       g_panel_name + "_LogoSymbol",
+       g_panel_name + "_Title",
+       g_close_button,
+       g_expand_button,
+       g_theme_button,
+       g_help_button,
+       g_drag_button,
+       g_close_button + "_area",
+       g_expand_button + "_area",
+       g_theme_button + "_area",
+       g_help_button + "_area",
+       g_drag_button + "_area",
+       // Añadimos el selector de símbolos
+       g_header_panel,
+       g_header_label,
+       g_arrow_button,
+       g_left_button,
+       g_right_button,
+       g_symbols_text,
+       // Añadimos el panel de información
+       g_info_panel,
+       g_spread_label,
+       g_spread_value,
+       g_atr_label,
+       g_atr_value,
+       g_gear_icon,
+       g_gear_icon + "_area"
+   };
+   for(int i = 0; i < ArraySize(panel_elements); i++)
    {
-      string name = ObjectName(0, i);
-      
-      // Verificar si es un objeto de nuestro panel
-      if(StringFind(name, g_panel_name) >= 0 || 
-         StringFind(name, "LMCpro") >= 0)
-      {
-         // Obtener posición actual
-         int curr_x = (int)ObjectGetInteger(0, name, OBJPROP_XDISTANCE);
-         int curr_y = (int)ObjectGetInteger(0, name, OBJPROP_YDISTANCE);
-         
-         // Mover el objeto aplicando el desplazamiento
-         ObjectSetInteger(0, name, OBJPROP_XDISTANCE, curr_x + dx);
-         ObjectSetInteger(0, name, OBJPROP_YDISTANCE, curr_y + dy);
-      }
+       if(ObjectFind(0, panel_elements[i]) >= 0)
+       {
+           int curr_x = (int)ObjectGetInteger(0, panel_elements[i], OBJPROP_XDISTANCE);
+           int curr_y = (int)ObjectGetInteger(0, panel_elements[i], OBJPROP_YDISTANCE);
+           ObjectSetInteger(0, panel_elements[i], OBJPROP_XDISTANCE, curr_x + dx);
+           ObjectSetInteger(0, panel_elements[i], OBJPROP_YDISTANCE, curr_y + dy);
+       }
    }
    
-   // 3. Mover específicamente las pestañas (en caso de que no estén cubiertas por la búsqueda anterior)
+   // Si el dropdown está visible, también hay que moverlo
+   if(g_dropdown_visible)
+   {
+       // Mover el panel del dropdown
+       if(ObjectFind(0, g_dropdown_panel) >= 0)
+       {
+           int curr_x = (int)ObjectGetInteger(0, g_dropdown_panel, OBJPROP_XDISTANCE);
+           int curr_y = (int)ObjectGetInteger(0, g_dropdown_panel, OBJPROP_YDISTANCE);
+           ObjectSetInteger(0, g_dropdown_panel, OBJPROP_XDISTANCE, curr_x + dx);
+           ObjectSetInteger(0, g_dropdown_panel, OBJPROP_YDISTANCE, curr_y + dy);
+           
+           // Mover también todos los elementos del dropdown
+           for(int i = 0; i < g_max_dropdown_items; i++)
+           {
+               string item_panel = g_dropdown_panel + "_Item" + IntegerToString(i);
+               if(ObjectFind(0, item_panel) >= 0)
+               {
+                   int item_x = (int)ObjectGetInteger(0, item_panel, OBJPROP_XDISTANCE);
+                   int item_y = (int)ObjectGetInteger(0, item_panel, OBJPROP_YDISTANCE);
+                   ObjectSetInteger(0, item_panel, OBJPROP_XDISTANCE, item_x + dx);
+                   ObjectSetInteger(0, item_panel, OBJPROP_YDISTANCE, item_y + dy);
+               }
+           }
+           
+           // Mover los botones de scroll si existen
+           string scroll_elements[] = {
+               g_dropdown_panel + "_ScrollUp",
+               g_dropdown_panel + "_ScrollDown"
+           };
+           
+           for(int i = 0; i < ArraySize(scroll_elements); i++)
+           {
+               if(ObjectFind(0, scroll_elements[i]) >= 0)
+               {
+                   int scroll_x = (int)ObjectGetInteger(0, scroll_elements[i], OBJPROP_XDISTANCE);
+                   int scroll_y = (int)ObjectGetInteger(0, scroll_elements[i], OBJPROP_YDISTANCE);
+                   ObjectSetInteger(0, scroll_elements[i], OBJPROP_XDISTANCE, scroll_x + dx);
+                   ObjectSetInteger(0, scroll_elements[i], OBJPROP_YDISTANCE, scroll_y + dy);
+               }
+           }
+       }
+   }
+   
+   // 3. Mover específicamente las pestañas
    if(m_tabManager != NULL)
    {
       m_tabManager.MoveTabs(dx, dy);
    }
    
-   // 4. Actualizar las coordenadas globales del panel
+   // 4. Mover las vistas
+   if(m_tradeView != NULL)
+   {
+      m_tradeView.MoveView(dx, dy);
+   }
+   
+   // 5. Actualizar las coordenadas globales del panel
    g_panelX += dx;
    g_panelY += dy;
    
-   // 5. Forzar redibujado de la pantalla
+   // 6. Forzar redibujado de la pantalla
    ChartRedraw();
 }
 
@@ -550,25 +664,47 @@ void CPanel::StopDragging()
 }
 
 //+------------------------------------------------------------------+
-//| Arrastrar el panel                                                |
+//| Arrastrar panel a una nueva posición                             |
 //+------------------------------------------------------------------+
-void CPanel::DragPanel(int x, int y) 
+void CPanel::DragPanel(int x, int y)
 {
-   if(!g_is_dragging) return;
+   // Verificar cualquiera de los dos modos de arrastre
+   if(!g_is_dragging && !g_drag_mode) 
+   {
+      return;
+   }
    
-   // Calcular desplazamiento desde el inicio del arrastre
-   int dx = x - g_drag_start_x;
-   int dy = y - g_drag_start_y;
+   int dx, dy;
    
-   // Calcular nueva posición del panel
-   int new_x = g_panel_start_x + dx;
-   int new_y = g_panel_start_y + dy;
+   // Calculamos el desplazamiento dependiendo del modo que se activó
+   if(g_drag_mode) {
+      // Modo arrastre iniciado por botón (≡)
+      // Calcular movimiento para mantener el botón bajo el cursor
+      int boton_x = (int)ObjectGetInteger(0, g_drag_button, OBJPROP_XDISTANCE);
+      int boton_y = (int)ObjectGetInteger(0, g_drag_button, OBJPROP_YDISTANCE);
+      
+      // El desplazamiento es la diferencia entre donde debería estar el botón (x - offset) 
+      // y donde está actualmente
+      dx = (x - g_drag_offset_x) - boton_x;
+      dy = (y - g_drag_offset_y) - boton_y;
+      
+      Print("DEBUG - Arrastre: mouse_x=", x, ", offset_x=", g_drag_offset_x, 
+            ", boton_x=", boton_x, ", dx=", dx);
+   } else {
+      // Modo arrastre iniciado por barra de título
+      dx = x - g_drag_start_x;
+      dy = y - g_drag_start_y;
+      
+      // Actualizar posiciones para el próximo movimiento
+      g_drag_start_x = x;
+      g_drag_start_y = y;
+   }
    
-   // Mover el panel a la nueva posición
-   MovePanel(new_x, new_y);
+   // Si no hay desplazamiento, no hacer nada
+   if(dx == 0 && dy == 0) return;
    
-   // Forzar un redibujado del gráfico
-   ChartRedraw();
+   // IMPORTANTE: Usar MoveAllPanelComponents que mueve TODOS los elementos
+   MoveAllPanelComponents(dx, dy);
 }
 
 //+------------------------------------------------------------------+
@@ -581,11 +717,12 @@ void CPanel::ToggleDragMode()
    {
       // Desactivar modo arrastre
       g_drag_mode = false;
+      g_is_dragging = false; 
       Print("Modo arrastre DESACTIVADO");
       
       // Restaurar apariencia del botón
-      ObjectSetInteger(0, g_drag_button, OBJPROP_BGCOLOR, C'77,118,201');
-      ObjectSetInteger(0, g_drag_button, OBJPROP_COLOR, COLOR_TEXT);
+      ObjectSetInteger(0, g_drag_button, OBJPROP_COLOR, clrWhite);
+      ObjectSetString(0, g_drag_button, OBJPROP_TEXT, "≡");
       
       // Restaurar color del título
       ObjectSetInteger(0, g_title_panel, OBJPROP_BGCOLOR, C'77,118,201');
@@ -599,29 +736,26 @@ void CPanel::ToggleDragMode()
    {
       // Activar modo arrastre
       g_drag_mode = true;
+      g_is_dragging = true;
       Print("Modo arrastre ACTIVADO - Mueve el panel con el mouse");
       
-      // Calcular y guardar el offset entre el mouse y la esquina del panel
-      int panel_x = (int)ObjectGetInteger(0, g_panel_name, OBJPROP_XDISTANCE);
-      int panel_y = (int)ObjectGetInteger(0, g_panel_name, OBJPROP_YDISTANCE);
-      g_drag_offset_x = g_mouse_x - panel_x;
-      g_drag_offset_y = g_mouse_y - panel_y;
+      // Obtener la posición del botón de arrastre para mantener el cursor sobre él
+      int boton_x = (int)ObjectGetInteger(0, g_drag_button, OBJPROP_XDISTANCE);
+      int boton_y = (int)ObjectGetInteger(0, g_drag_button, OBJPROP_YDISTANCE);
+      
+      // El offset debe ser la diferencia entre la posición del mouse y la posición del botón
+      // Esto hace que el panel se mueva de manera que el botón permanezca bajo el cursor
+      g_drag_offset_x = g_mouse_x - boton_x;
+      g_drag_offset_y = g_mouse_y - boton_y;
+      
+      Print("DEBUG - Calculando offset de arrastre: mouse_x=", g_mouse_x, ", boton_x=", boton_x, ", offset_x=", g_drag_offset_x);
       
       // Cambiar apariencia del botón para indicar que está activo
-      ObjectSetInteger(0, g_drag_button, OBJPROP_BGCOLOR, clrRed);
-      ObjectSetInteger(0, g_drag_button, OBJPROP_COLOR, clrWhite);
+      ObjectSetInteger(0, g_drag_button, OBJPROP_COLOR, clrRed);
+      ObjectSetString(0, g_drag_button, OBJPROP_TEXT, "⊗"); // Usar un símbolo diferente para indicar stop
       
       // Cambiar apariencia del título para indicar modo arrastre
-      color original_color = (color)ObjectGetInteger(0, g_title_panel, OBJPROP_BGCOLOR);
-      color drag_color;
-      
-      if(g_dark_theme) {
-         drag_color = ColorBrighten(original_color, 40);
-      } else {
-         drag_color = ColorDarken(original_color, 40);
-      }
-      
-      ObjectSetInteger(0, g_title_panel, OBJPROP_BGCOLOR, drag_color);
+      ObjectSetInteger(0, g_title_panel, OBJPROP_BGCOLOR, C'200,118,77'); // Color naranja para indicar modo arrastre
    }
    
    ChartRedraw();
@@ -665,4 +799,62 @@ void CPanel::ClosePanel()
    {
        m_tabManager.Destroy();
    }
+
+   // Destruir las vistas de contenido
+   if(m_tradeView != NULL) m_tradeView.Destroy();
+}
+
+void CPanel::CalculateContentArea()
+{
+    // Asegurarse de que los objetos de pestañas existan antes de obtener sus propiedades
+    if(m_tabManager == NULL || ObjectFind(0, TAB_BUTTON_TRADE_NAME) < 0)
+    {
+        Print("Error: No se pueden calcular las dimensiones del área de contenido porque las pestañas no existen.");
+        // Establecer valores por defecto o manejar el error
+        m_contentAreaX = g_panelX; 
+        m_contentAreaY = g_panelY + 100; // Un valor por defecto razonable
+        m_contentAreaWidth = g_panelWidth;
+        m_contentAreaHeight = g_panelHeight - 100; 
+        if(m_contentAreaHeight < 0) m_contentAreaHeight = 50; // Mínimo
+        return;
+    }
+
+    int tabs_y = (int)ObjectGetInteger(0, TAB_BUTTON_TRADE_NAME, OBJPROP_YDISTANCE); // Obtener Y de un botón de pestaña
+    int tab_button_height = (int)ObjectGetInteger(0, TAB_BUTTON_TRADE_NAME, OBJPROP_YSIZE); // Obtener altura
+    int content_margin_top = 5; // Espacio entre pestañas y contenido
+
+    m_contentAreaX = g_panelX; // El contenido empieza en la misma X que el panel
+    m_contentAreaY = tabs_y + tab_button_height + content_margin_top; // Debajo de las pestañas + margen
+    m_contentAreaWidth = g_panelWidth; // El contenido usa todo el ancho del panel
+    
+    // Calcular altura restante para el contenido
+    int panel_bottom_y = g_panelY + g_panelHeight;
+    m_contentAreaHeight = panel_bottom_y - m_contentAreaY;
+    if (m_contentAreaHeight < 10) m_contentAreaHeight = 10; // Asegurar una altura mínima visible
+}
+
+void CPanel::UpdateActiveView(ENUM_ACTIVE_TAB activeTab)
+{
+    PrintFormat("Actualizando vista activa a: %d", activeTab);
+    // Ocultar todas las vistas primero
+    if(m_tradeView != NULL) m_tradeView.Hide();
+
+    // Mostrar la vista activa
+    switch(activeTab)
+    {
+        case TAB_TRADE:
+            Print("Activando TradeView");
+            if(m_tradeView != NULL) m_tradeView.Show();
+            break;
+        case TAB_MANAGE:
+            Print("Activando ManageView (aún no implementada)");
+            break;
+        case TAB_GRID:
+             Print("Activando GridView (aún no implementada)");
+            break;
+        default:
+            Print("Error: Pestaña desconocida o ninguna activa.");
+            break;
+    }
+    ChartRedraw(); // Redibujar para mostrar/ocultar
 } 
