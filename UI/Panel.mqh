@@ -9,6 +9,7 @@
 #include "../Core/Globals.mqh"
 #include "../Utils/ColorUtils.mqh"
 #include "ThemeManager.mqh"
+#include "TabManager.mqh"
 
 //+------------------------------------------------------------------+
 //| Clase para gestionar el panel principal                           |
@@ -18,6 +19,7 @@ class CPanel
 private:
    CThemeManager*    m_themeManager;
    bool              m_initialized;
+   CTabManager*      m_tabManager;
    
 public:
                      CPanel(CThemeManager* themeManager);
@@ -35,6 +37,7 @@ public:
    void              StopDragging();
    void              ToggleDragMode();
    void              ClosePanel();
+   CTabManager*      GetTabManager() { return m_tabManager; }
 };
 
 //+------------------------------------------------------------------+
@@ -44,6 +47,11 @@ CPanel::CPanel(CThemeManager* themeManager)
 {
    m_themeManager = themeManager;
    m_initialized = false;
+   m_tabManager = new CTabManager(m_themeManager);
+   if(m_tabManager == NULL)
+   {
+       Print("Error: No se pudo crear CTabManager");
+   }
 }
 
 //+------------------------------------------------------------------+
@@ -51,7 +59,11 @@ CPanel::CPanel(CThemeManager* themeManager)
 //+------------------------------------------------------------------+
 CPanel::~CPanel()
 {
-   // Nada que limpiar
+   if(m_tabManager != NULL)
+   {
+      delete m_tabManager;
+      m_tabManager = NULL;
+   }
 }
 
 //+------------------------------------------------------------------+
@@ -77,6 +89,16 @@ bool CPanel::Initialize(int x, int y, int width, int height)
    {
       Print("Error al crear la barra de título");
       return false;
+   }
+   
+   int title_height = 24;
+   int info_section_height = g_item_height;
+   int vertical_offset = 25;
+   int tabs_y = y + title_height + info_section_height + vertical_offset;
+
+   if(m_tabManager != NULL && !m_tabManager.Initialize(x, tabs_y, width))
+   {
+       Print("Error al inicializar el TabManager");
    }
    
    m_initialized = true;
@@ -399,11 +421,11 @@ void CPanel::MovePanel(int x, int y)
 }
 
 //+------------------------------------------------------------------+
-//| Mover todos los componentes del panel juntos                      |
+//| Mover todos los componentes del panel                             |
 //+------------------------------------------------------------------+
 void CPanel::MoveAllPanelComponents(int dx, int dy)
 {
-   if(dx == 0 && dy == 0) return;
+   if(dx == 0 && dy == 0) return; // No hacer nada si no hay desplazamiento
    
    // 1. Obtenemos todos los objetos gráficos
    int total = ObjectsTotal(0);
@@ -427,7 +449,17 @@ void CPanel::MoveAllPanelComponents(int dx, int dy)
       }
    }
    
-   // 3. Forzar redibujado de la pantalla
+   // 3. Mover específicamente las pestañas (en caso de que no estén cubiertas por la búsqueda anterior)
+   if(m_tabManager != NULL)
+   {
+      m_tabManager.MoveTabs(dx, dy);
+   }
+   
+   // 4. Actualizar las coordenadas globales del panel
+   g_panelX += dx;
+   g_panelY += dy;
+   
+   // 5. Forzar redibujado de la pantalla
    ChartRedraw();
 }
 
@@ -627,4 +659,10 @@ void CPanel::ClosePanel()
    
    // Descargar el indicador/EA
    ExpertRemove();
+
+   // Destruir las pestañas
+   if(m_tabManager != NULL)
+   {
+       m_tabManager.Destroy();
+   }
 } 

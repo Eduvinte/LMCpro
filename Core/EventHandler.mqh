@@ -264,6 +264,23 @@ void CEventHandler::OnChartEvent(const int id, const long &lparam, const double 
          m_panel.ClosePanel();
          return;
       }
+      
+      // <<< NUEVOS EVENTOS PARA BOTONES DE PESTAÑAS >>>
+      // Verificar si es un clic en alguno de los botones de pestañas
+      if(m_panel != NULL && m_panel.GetTabManager() != NULL)
+      {
+         // Si el TabManager procesa el evento (devuelve true), significa que se cambió la pestaña
+         if(m_panel.GetTabManager().OnClick(button_to_handle))
+         {
+            // Aquí puedes añadir cualquier lógica adicional cuando cambia la pestaña
+            Print("Cambio de pestaña detectado: ", button_to_handle);
+            
+            // Por ahora solo refrescamos el gráfico
+            ChartRedraw();
+            return;
+         }
+      }
+      // <<< FIN NUEVOS EVENTOS >>>
    }
    
    // Para eventos de clic en el chart (fuera de objetos)
