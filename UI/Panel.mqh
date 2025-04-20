@@ -111,7 +111,7 @@ bool CPanel::Initialize(int x, int y, int width, int height)
    
    int title_height = 24;
    int info_section_height = g_item_height;
-   int vertical_offset = 20;
+   int vertical_offset = 23;
    int tabs_y = y + title_height + info_section_height + vertical_offset;
 
    if(m_tabManager != NULL && !m_tabManager.Initialize(x, tabs_y, width))
@@ -163,7 +163,7 @@ bool CPanel::CreateMainPanel(int x, int y, int width, int height)
    ObjectSetInteger(0, g_panel_name, OBJPROP_YDISTANCE, y);
    ObjectSetInteger(0, g_panel_name, OBJPROP_XSIZE, width);
    ObjectSetInteger(0, g_panel_name, OBJPROP_YSIZE, height);
-   ObjectSetInteger(0, g_panel_name, OBJPROP_BGCOLOR, COLOR_BG_PANEL);
+   ObjectSetInteger(0, g_panel_name, OBJPROP_BGCOLOR, C'30,32,45');
    ObjectSetInteger(0, g_panel_name, OBJPROP_BORDER_COLOR, COLOR_BORDER);
    ObjectSetInteger(0, g_panel_name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
    

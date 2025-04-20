@@ -105,6 +105,7 @@ int g_panelX = 0;
 int g_panelY = 80;
 int g_panelWidth = 350;
 int g_panelHeight = 450;
+int g_titleHeight = 24; // <<< AÑADIDA LA ALTURA DE LA BARRA DE TÍTULO
 
 // Estado global de la aplicación
 bool g_isInitialized = false;
