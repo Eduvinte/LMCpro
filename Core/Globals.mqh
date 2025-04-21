@@ -103,8 +103,9 @@ string g_gear_icon = "LMCproPanel_GearIcon";  // Nombre del objeto para el icono
 // Panel principal posición y dimensiones
 int g_panelX = 0;
 int g_panelY = 80;
-int g_panelWidth = 350;
-int g_panelHeight = 450;
+int g_panelWidth = 300;
+int g_panelHeight = 395;
+int g_titleHeight = 24; // <<< AÑADIDA LA ALTURA DE LA BARRA DE TÍTULO
 
 // Estado global de la aplicación
 bool g_isInitialized = false;
@@ -145,7 +146,7 @@ int g_settings_x = 0;                             // Posición X del panel de co
 int g_settings_y = 0;                             // Posición Y del panel de configuración
 int g_settings_width = 250;                       // Ancho del panel de configuración
 int g_settings_height = 350;                      // Altura del panel de configuración
-color g_settings_bg_color = C'45,45,68';          // Color de fondo del panel
+color g_settings_bg_color = C'60,62,91';          // Color de fondo del panel
 color g_settings_title_color = C'77,118,201';     // Color de la barra de título
 
 //+------------------------------------------------------------------+

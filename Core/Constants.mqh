@@ -93,7 +93,7 @@
 #define COLOR_BG_HEADER_DARK    C'69,70,89,255'   // Azul para el header del selector
 #define COLOR_BG_DROPDOWN_DARK  C'45,45,68'    // Azul oscuro para el dropdown
 #define COLOR_ITEM_HOVER_DARK   C'70,70,94'    // Azul más claro para hover
-#define COLOR_BG_PANEL_DARK     clrBlack       // Fondo del panel principal
+#define COLOR_BG_PANEL_DARK     C'30,32,45'    // Fondo del panel principal gris azulado (cambiado de clrBlack)
 
 // Tema Claro
 #define COLOR_BG_TITLE_LIGHT     C'220,225,240'   // Azul claro del título
