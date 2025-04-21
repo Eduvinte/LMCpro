@@ -143,6 +143,11 @@ public:
    void              ToggleCheckboxState(const string checkbox_name);
    bool              IsTPEnabled() const { return m_tp_enabled; }
    bool              IsSLEnabled() const { return m_sl_enabled; }
+
+   //+------------------------------------------------------------------+
+   //| Actualiza la posición y dimensiones de la vista completa          |
+   //+------------------------------------------------------------------+
+   void              UpdatePosition(int x, int y, int width, int height);
 };
 
 //+------------------------------------------------------------------+
@@ -250,77 +255,79 @@ bool CTradeView::Initialize(int x, int y, int width, int height)
 bool CTradeView::CreateControls()
 {
    // Dimensiones y espaciado (Ajustar según sea necesario)
-   int firstRowY = 15;   // Margen superior para la primera fila
-   int elementHeight = 20;
-   int smallSpacing = 5;
-   int largeSpacing = 15; // Espacio vertical entre filas REDUCIDO
+   int firstRowY = 5;    // Margen superior REDUCIDO para la primera fila
+   int elementHeight = 20; 
+   int smallSpacing = 5; // Espaciado básico entre elementos
+   int largeSpacing = 18; // Espacio vertical entre filas AÚN MÁS REDUCIDO
    int separatorHeight = 1;
    int secondRowY = firstRowY + elementHeight + largeSpacing;
    int separatorY = secondRowY - separatorHeight - (largeSpacing / 2);
    int thirdRowY = secondRowY + elementHeight + largeSpacing;
    int separatorY2 = thirdRowY - separatorHeight - (largeSpacing / 2);
 
-   // --- FILA 1: Lot Calc, Size Selector, Value Input (Centrados como antes) ---
-   int lotCalcWidth = 80;
-   int sizeSelectorWidth = 150;
-   int valueInputWidth = 50 + 1 + 20; // Edit + spacing + Buttons
-   int totalElementsWidth_R1 = lotCalcWidth + smallSpacing + sizeSelectorWidth + smallSpacing + valueInputWidth;
-   int leftMargin_R1 = (m_viewWidth > totalElementsWidth_R1) ? (m_viewWidth - totalElementsWidth_R1) / 2 : smallSpacing;
-   int lotCalcX = leftMargin_R1;
-   int sizeSelectorX = lotCalcX + lotCalcWidth + smallSpacing;
-   int valueInputX = sizeSelectorX + sizeSelectorWidth + smallSpacing;
+   // Usamos un valor fijo para el margen izquierdo que sabemos que funciona bien visualmente
+   int fixedLeftMargin = 15; // Ajustado para que los elementos queden centrados visualmente
 
-   if (!CreateLotCalcButton(lotCalcX, firstRowY)) return false;
-   if (!CreateSizeSelector(sizeSelectorX, firstRowY)) return false;
-   if (!CreateValueInput(valueInputX, firstRowY)) return false;
+   // --- FILA 1: Lot Calc, Size Selector, Value Input --- 
+   int lotCalcWidth = 70;  // Reducido
+   int sizeSelectorWidth = 120; // Reducido
+   int valueInputWidth = 50 + 1 + 20; // Edit + spacing + Buttons (Se mantiene)
+   // Usar el margen fijo
+   int currentX_R1 = fixedLeftMargin; // Empezar desde el margen fijo
+   
+   if (!CreateLotCalcButton(currentX_R1, firstRowY)) return false;
+   currentX_R1 += lotCalcWidth + smallSpacing;
+   
+   if (!CreateSizeSelector(currentX_R1, firstRowY)) return false;
+   currentX_R1 += sizeSelectorWidth + smallSpacing;
+   
+   if (!CreateValueInput(currentX_R1, firstRowY)) return false;
+   // currentX_R1 += valueInputWidth; // Ya no necesitamos seguir sumando en esta fila
    
    // --- SEPARADOR --- 
    if (!CreateSeparatorLine(separatorY, SEPARATOR_LINE_1_NAME)) return false;
 
-   // --- FILA 2: Lots, Market, Price (Centrado como bloque) ---
-   int labelWidth = 30; // Ancho para etiquetas "Lots" y "Price"
-   int lotsInputWidth = 50 + 1 + 20; // Similar a ValueInput
-   int marketBtnWidth = 70;
-   int priceInputWidth = 70 + 1 + 20;
-
-   // Calcular ancho total de elementos + espaciado FIJO
-   int totalWidth_R2 = labelWidth + smallSpacing + lotsInputWidth + smallSpacing + marketBtnWidth + smallSpacing + priceInputWidth + smallSpacing + labelWidth;
-   
-   // Calcular margen izquierdo para centrar Fila 2
-   int leftMargin_R2 = (m_viewWidth > totalWidth_R2) ? (m_viewWidth - totalWidth_R2) / 2 : smallSpacing;
-   
-   int currentX = leftMargin_R2; // Empezar desde el margen calculado
+   // --- FILA 2: Lots, Market, Price --- 
+   int labelWidth = 15; // Ancho para etiquetas "Lots" y "Price"
+   int lotsInputWidth = 50 + 1 + 20; // Similar a ValueInput (Se mantiene)
+   int marketBtnWidth = 55; // Reducido a 55 para coincidir con CreateMarketButton
+   int priceInputWidth = 50 + 1 + 20; // Edit reducido a 50
+   int row2Spacing = 7; // Espaciado específico para la fila 2 (incrementado nuevamente)
+   // Usar el margen fijo
+   int currentX_R2 = fixedLeftMargin; // Empezar desde el margen fijo
    
    // Label "Lots"
    string lotsLabelName = LOTS_LABEL_NAME;
    if(!ObjectCreate(0, lotsLabelName, OBJ_LABEL, 0, 0, 0)) return false;
-   ObjectSetInteger(0, lotsLabelName, OBJPROP_XDISTANCE, m_viewX + currentX);
-   ObjectSetInteger(0, lotsLabelName, OBJPROP_YDISTANCE, m_viewY + secondRowY + 4); // Ajuste vertical para alinear con input
+   ObjectSetInteger(0, lotsLabelName, OBJPROP_XDISTANCE, m_viewX + currentX_R2);
+   ObjectSetInteger(0, lotsLabelName, OBJPROP_YDISTANCE, m_viewY + secondRowY + 2); // Ajuste vertical para alinear con input
    ObjectSetString(0, lotsLabelName, OBJPROP_TEXT, "Lots");
+   ObjectSetInteger(0, lotsLabelName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, lotsLabelName, OBJPROP_COLOR, clrGray); // Usar color de tema si está disponible
    ObjectSetInteger(0, lotsLabelName, OBJPROP_BACK, false);
    ObjectSetInteger(0, lotsLabelName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
    AddObjectName(lotsLabelName);
-   currentX += labelWidth + smallSpacing; // Usar smallSpacing fijo
+   currentX_R2 += labelWidth + row2Spacing; // Usar espaciado específico
    
    // Input Lots
-   if (!CreateLotsInput(currentX, secondRowY)) return false;
-   currentX += lotsInputWidth + smallSpacing; // Usar smallSpacing fijo
+   if (!CreateLotsInput(currentX_R2, secondRowY)) return false;
+   currentX_R2 += lotsInputWidth + row2Spacing; // Usar espaciado específico
    
    // Botón Market
-   if (!CreateMarketButton(currentX, secondRowY)) return false;
-   currentX += marketBtnWidth + smallSpacing; // Usar smallSpacing fijo
+   if (!CreateMarketButton(currentX_R2, secondRowY)) return false;
+   currentX_R2 += marketBtnWidth + row2Spacing + 0; // Espaciado adicional específico para separar Market de Price
    
    // Input Price
-   if (!CreatePriceInput(currentX, secondRowY)) return false;
-   currentX += priceInputWidth + smallSpacing; // Usar smallSpacing fijo
+   if (!CreatePriceInput(currentX_R2, secondRowY)) return false;
+   currentX_R2 += priceInputWidth + row2Spacing; // Usar espaciado específico
    
    // Label "Price"
    string priceLabelName = PRICE_LABEL_NAME;
    if(!ObjectCreate(0, priceLabelName, OBJ_LABEL, 0, 0, 0)) return false;
-   ObjectSetInteger(0, priceLabelName, OBJPROP_XDISTANCE, m_viewX + currentX);
+   ObjectSetInteger(0, priceLabelName, OBJPROP_XDISTANCE, m_viewX + currentX_R2);
    ObjectSetInteger(0, priceLabelName, OBJPROP_YDISTANCE, m_viewY + secondRowY + 4);
    ObjectSetString(0, priceLabelName, OBJPROP_TEXT, "Price");
+   ObjectSetInteger(0, priceLabelName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, priceLabelName, OBJPROP_COLOR, clrGray);
    ObjectSetInteger(0, priceLabelName, OBJPROP_BACK, false);
    ObjectSetInteger(0, priceLabelName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
@@ -331,60 +338,52 @@ bool CTradeView::CreateControls()
 
    // --- FILA 3: TP, ATR, SL --- 
    int checkboxWidth = 20;
-   int tpLabelWidth = 25; // Ancho para "TP"
-   int tpInputWidth = 50 + 1 + 20; // Valor + botones
-   int atrBtnWidth = 60;
-   int slInputWidth = 50 + 1 + 20;
+   int tpLabelWidth = 15; // Ancho para "TP"
+   int tpInputWidth = 40 + 1 + 20; // Edit reducido a 40
+   int atrBtnWidth = 50; // Reducido
+   int slInputWidth = 40 + 1 + 20; // Edit reducido a 40
    int slLabelWidth = 25; // Ancho para "SL"
    int elementHeightR3 = 20; // Altura estándar de los elementos para alineación
    int labelYOffsetR3 = 4; // Offset vertical para alinear texto de labels con centros de inputs
-
-   // Calcular ancho total y centrar
-   int totalWidth_R3 = checkboxWidth + smallSpacing + tpLabelWidth + smallSpacing + 
-                       tpInputWidth + smallSpacing + atrBtnWidth + smallSpacing + 
-                       slInputWidth + smallSpacing + slLabelWidth + smallSpacing + checkboxWidth;
-   int leftMargin_R3 = (m_viewWidth > totalWidth_R3) ? (m_viewWidth - totalWidth_R3) / 2 : smallSpacing;
-   int currentX_R3 = leftMargin_R3; // Empezar desde el margen calculado para Fila 3
+   // Usar el margen fijo
+   int currentX_R3 = fixedLeftMargin; // Empezar desde el margen fijo
    
-   // Checkbox TP + Label TP
+   // Checkbox TP + Label TP (Ancho total = checkboxWidth + smallSpacing + tpLabelWidth = 20 + 5 + 25 = 50)
    if (!CreateCheckboxLabelPair(currentX_R3, thirdRowY, TP_CHECKBOX_NAME, TP_LABEL_NAME, "TP", true, elementHeightR3, labelYOffsetR3)) return false;
-   currentX_R3 += checkboxWidth + smallSpacing + tpLabelWidth + smallSpacing;
+   currentX_R3 += 32 + smallSpacing; // Avanzar por el par completo
 
-   // Input TP
+   // Input TP (Ancho = tpInputWidth = 61)
    if (!CreateValueInputWithButtons(currentX_R3, thirdRowY, TP_EDIT_NAME, TP_UP_BTN_NAME, TP_DOWN_BTN_NAME, "13.78", 50, elementHeightR3)) return false;
    currentX_R3 += tpInputWidth + smallSpacing;
 
-   // Botón ATR
+   // Botón ATR (Ancho = atrBtnWidth = 50)
    if (!CreateATRButton(currentX_R3, thirdRowY, elementHeightR3)) return false;
    currentX_R3 += atrBtnWidth + smallSpacing;
 
-   // Input SL/ATR
+   // Input SL/ATR (Ancho = slInputWidth = 61)
    if (!CreateValueInputWithButtons(currentX_R3, thirdRowY, SL_EDIT_NAME, SL_UP_BTN_NAME, SL_DOWN_BTN_NAME, "13.78", 50, elementHeightR3)) return false;
    currentX_R3 += slInputWidth + smallSpacing;
 
-   // Label SL + Checkbox SL
+   // Label SL + Checkbox SL (Ancho total = slLabelWidth + smallSpacing + checkboxWidth = 25 + 5 + 20 = 50)
    if (!CreateCheckboxLabelPair(currentX_R3, thirdRowY, SL_CHECKBOX_NAME, SL_LABEL_NAME, "SL", false, elementHeightR3, labelYOffsetR3)) return false;
 
    // --- FILA 4: R:TP, R:R, R:SL --- 
    int fourthRowY = thirdRowY + elementHeightR3 + largeSpacing; // Posición Y de la cuarta fila
-   int rLabelWidth = 40; // Ancho estimado para "R : TP" y "R : SL"
-   int rrInputWidth = 50 + 1 + 20; // Igual que TP/SL inputs
-   int rrButtonWidth = 60; // Ancho del botón R:R
+   int rLabelWidth = 32; // Ancho estimado para "R : TP" y "R : SL"
+   int rrInputWidth = 40 + 1 + 20; // Edit reducido a 40
+   int rrButtonWidth = 50; // Reducido
    int elementHeightR4 = 20; // Altura para la fila 4
    int labelYOffsetR4 = 4;   // Offset Y para labels en fila 4
-
-   // Calcular ancho total y centrar Fila 4
-   int totalWidth_R4 = rLabelWidth + smallSpacing + rrInputWidth + smallSpacing +
-                       rrButtonWidth + smallSpacing + rrInputWidth + smallSpacing + rLabelWidth;
-   int leftMargin_R4 = (m_viewWidth > totalWidth_R4) ? (m_viewWidth - totalWidth_R4) / 2 : smallSpacing;
-   int currentX_R4 = leftMargin_R4;
+   // Usar el margen fijo
+   int currentX_R4 = fixedLeftMargin; // Empezar desde el margen fijo
 
    // Label "R : TP"
    string rtpLabelName = RTP_LABEL_NAME;
    if(!ObjectCreate(0, rtpLabelName, OBJ_LABEL, 0, 0, 0)) return false;
-   ObjectSetInteger(0, rtpLabelName, OBJPROP_XDISTANCE, m_viewX + currentX_R4);
+   ObjectSetInteger(0, rtpLabelName, OBJPROP_XDISTANCE, m_viewX + 20);
    ObjectSetInteger(0, rtpLabelName, OBJPROP_YDISTANCE, m_viewY + fourthRowY + labelYOffsetR4);
    ObjectSetString(0, rtpLabelName, OBJPROP_TEXT, "R : TP");
+   ObjectSetInteger(0, rtpLabelName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, rtpLabelName, OBJPROP_COLOR, clrGray);
    ObjectSetInteger(0, rtpLabelName, OBJPROP_BACK, false);
    ObjectSetInteger(0, rtpLabelName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
@@ -404,6 +403,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, rrButtonName, OBJPROP_YSIZE, elementHeightR4);
    ObjectSetString(0, rrButtonName, OBJPROP_TEXT, "R:R");
    ObjectSetInteger(0, rrButtonName, OBJPROP_BGCOLOR, C'60,60,80'); // Mismo color que ATR/Market
+   ObjectSetInteger(0, rrButtonName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, rrButtonName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, rrButtonName, OBJPROP_BORDER_COLOR, C'90,90,100');
    ObjectSetInteger(0, rrButtonName, OBJPROP_STATE, false);
@@ -422,16 +422,18 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, rslLabelName, OBJPROP_XDISTANCE, m_viewX + currentX_R4);
    ObjectSetInteger(0, rslLabelName, OBJPROP_YDISTANCE, m_viewY + fourthRowY + labelYOffsetR4);
    ObjectSetString(0, rslLabelName, OBJPROP_TEXT, "R : SL");
+   ObjectSetInteger(0, rslLabelName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, rslLabelName, OBJPROP_COLOR, clrGray);
    ObjectSetInteger(0, rslLabelName, OBJPROP_BACK, false);
    ObjectSetInteger(0, rslLabelName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
    AddObjectName(rslLabelName);
 
    // --- FILA 5: BUY, Edit, SELL --- 
-   int fifthRowY = fourthRowY + elementHeightR4 + largeSpacing; // Posición Y de la quinta fila
-   int sideMarginR5 = 10; // Margen a los lados para la fila 5
+   // (Esta fila ya usaba totalAvailableWidthR5, así que debería estar bien)
+   int fifthRowY = fourthRowY + elementHeightR4 + 15; // Posición Y de la quinta fila
+   int sideMarginR5 = 15; // Margen a los lados para la fila 5
    int totalAvailableWidthR5 = m_viewWidth - (2 * sideMarginR5);
-   int editButtonWidth = 30;  // Ancho para botón Edit (icono)
+   int editButtonWidth = 20;  // Ancho para botón Edit (icono)
    int buttonHeightR5 = 25; // Altura para botones en fila 5
 
    // Calcular el ancho para los botones BUY/SELL
@@ -449,6 +451,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, buyButtonName, OBJPROP_XSIZE, buySellButtonWidth);
    ObjectSetInteger(0, buyButtonName, OBJPROP_YSIZE, buttonHeightR5);
    ObjectSetString(0, buyButtonName, OBJPROP_TEXT, "BUY");
+   ObjectSetInteger(0, buyButtonName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, buyButtonName, OBJPROP_BGCOLOR, clrDodgerBlue); // Azul
    ObjectSetInteger(0, buyButtonName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, buyButtonName, OBJPROP_BORDER_COLOR, clrGray);
@@ -466,7 +469,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, editButtonName, OBJPROP_XSIZE, editButtonWidth);
    ObjectSetInteger(0, editButtonName, OBJPROP_YSIZE, editButtonWidth); // Hacerlo cuadrado
    ObjectSetString(0, editButtonName, OBJPROP_TEXT, "✎"); // Carácter Lápiz Unicode (U+270E)
-   ObjectSetInteger(0, editButtonName, OBJPROP_FONTSIZE, 14); // Tamaño fuente para el icono
+   ObjectSetInteger(0, editButtonName, OBJPROP_FONTSIZE, 9); // Tamaño fuente para el icono (reducido)
    ObjectSetInteger(0, editButtonName, OBJPROP_BGCOLOR, C'80,80,90'); // Gris medio
    ObjectSetInteger(0, editButtonName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, editButtonName, OBJPROP_BORDER_COLOR, clrGray);
@@ -484,6 +487,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, sellButtonName, OBJPROP_XSIZE, buySellButtonWidth);
    ObjectSetInteger(0, sellButtonName, OBJPROP_YSIZE, buttonHeightR5);
    ObjectSetString(0, sellButtonName, OBJPROP_TEXT, "SELL");
+   ObjectSetInteger(0, sellButtonName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, sellButtonName, OBJPROP_BGCOLOR, clrOrangeRed); // Rojo/Naranja
    ObjectSetInteger(0, sellButtonName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, sellButtonName, OBJPROP_BORDER_COLOR, clrGray);
@@ -493,10 +497,10 @@ bool CTradeView::CreateControls()
    AddObjectName(sellButtonName);
 
    // --- FILA 6: CLOSE BUY, CLOSE ALL, CLOSE SELL ---
-   int sixthRowY = fifthRowY + buttonHeightR5 + largeSpacing; // Posición Y
+   int sixthRowY = fifthRowY + buttonHeightR5 + 10; // Posición Y
    int buttonHeightR6 = 25; // Altura botones fila 6
    int buttonWidthR6 = (totalAvailableWidthR5 - (2 * smallSpacing)) / 3; // Distribuir ancho (aproximado)
-   int currentX_R6 = sideMarginR5; // Empezar desde el margen
+   int currentX_R6 = 16; // Empezar desde el margen
 
    // Botón CLOSE BUY
    string closeBuyBtnName = CLOSE_BUY_BUTTON_NAME;
@@ -506,7 +510,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, closeBuyBtnName, OBJPROP_XSIZE, buttonWidthR6);
    ObjectSetInteger(0, closeBuyBtnName, OBJPROP_YSIZE, buttonHeightR6);
    ObjectSetString(0, closeBuyBtnName, OBJPROP_TEXT, "CLOSE BUY");
-   ObjectSetInteger(0, closeBuyBtnName, OBJPROP_FONTSIZE, 8); // Reducir tamaño fuente
+   ObjectSetInteger(0, closeBuyBtnName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, closeBuyBtnName, OBJPROP_BGCOLOR, clrDodgerBlue);
    ObjectSetInteger(0, closeBuyBtnName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, closeBuyBtnName, OBJPROP_BORDER_COLOR, clrGray);
@@ -524,7 +528,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, closeAllBtnName, OBJPROP_XSIZE, buttonWidthR6);
    ObjectSetInteger(0, closeAllBtnName, OBJPROP_YSIZE, buttonHeightR6);
    ObjectSetString(0, closeAllBtnName, OBJPROP_TEXT, "CLOSE ALL");
-   ObjectSetInteger(0, closeAllBtnName, OBJPROP_FONTSIZE, 8); // Reducir tamaño fuente
+   ObjectSetInteger(0, closeAllBtnName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, closeAllBtnName, OBJPROP_BGCOLOR, C'60,60,80'); // Gris
    ObjectSetInteger(0, closeAllBtnName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, closeAllBtnName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -542,7 +546,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, closeSellBtnName, OBJPROP_XSIZE, buttonWidthR6);
    ObjectSetInteger(0, closeSellBtnName, OBJPROP_YSIZE, buttonHeightR6);
    ObjectSetString(0, closeSellBtnName, OBJPROP_TEXT, "CLOSE SELL");
-   ObjectSetInteger(0, closeSellBtnName, OBJPROP_FONTSIZE, 8); // Reducir tamaño fuente
+   ObjectSetInteger(0, closeSellBtnName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, closeSellBtnName, OBJPROP_BGCOLOR, clrOrangeRed);
    ObjectSetInteger(0, closeSellBtnName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, closeSellBtnName, OBJPROP_BORDER_COLOR, clrGray);
@@ -553,12 +557,12 @@ bool CTradeView::CreateControls()
    currentX_R6 += buttonWidthR6 + smallSpacing;
 
    // --- FILA 7: DELETE ORDERS, CLOSE %, REVERSE ---
-   int seventhRowY = sixthRowY + buttonHeightR6 + smallSpacing; // Posición Y (menos espacio que largeSpacing)
+   int seventhRowY = sixthRowY + buttonHeightR6 + 10; // Posición Y (menos espacio que largeSpacing)
    int buttonHeightR7 = 25;
    int closePercentEditWidth = 40;
    int closePercentBtnWidth = buttonWidthR6 - closePercentEditWidth - smallSpacing; // Ancho botón % basado en el espacio del medio
    int deleteReverseBtnWidth = buttonWidthR6; // Usar el mismo ancho que los botones de arriba
-   int currentX_R7 = sideMarginR5;
+   int currentX_R7 = 16;
 
    // Botón DELETE ORDERS
    string delOrdersBtnName = DELETE_ORDERS_BUTTON_NAME;
@@ -568,7 +572,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, delOrdersBtnName, OBJPROP_XSIZE, deleteReverseBtnWidth);
    ObjectSetInteger(0, delOrdersBtnName, OBJPROP_YSIZE, buttonHeightR7);
    ObjectSetString(0, delOrdersBtnName, OBJPROP_TEXT, "DELETE ORDERS");
-   ObjectSetInteger(0, delOrdersBtnName, OBJPROP_FONTSIZE, 8); // Reducir tamaño fuente
+   ObjectSetInteger(0, delOrdersBtnName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, delOrdersBtnName, OBJPROP_BGCOLOR, C'60,60,80');
    ObjectSetInteger(0, delOrdersBtnName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, delOrdersBtnName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -586,7 +590,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, closePercBtnName, OBJPROP_XSIZE, closePercentBtnWidth);
    ObjectSetInteger(0, closePercBtnName, OBJPROP_YSIZE, buttonHeightR7);
    ObjectSetString(0, closePercBtnName, OBJPROP_TEXT, "CLOSE %");
-   ObjectSetInteger(0, closePercBtnName, OBJPROP_FONTSIZE, 8); // Reducir tamaño fuente
+   ObjectSetInteger(0, closePercBtnName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, closePercBtnName, OBJPROP_BGCOLOR, C'60,60,80');
    ObjectSetInteger(0, closePercBtnName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, closePercBtnName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -605,6 +609,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, closePercEditName, OBJPROP_YSIZE, buttonHeightR7);
    ObjectSetString(0, closePercEditName, OBJPROP_TEXT, "50");
    ObjectSetInteger(0, closePercEditName, OBJPROP_BGCOLOR, C'50,50,60');
+   ObjectSetInteger(0, closePercEditName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, closePercEditName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, closePercEditName, OBJPROP_BORDER_COLOR, C'90,90,100');
    ObjectSetInteger(0, closePercEditName, OBJPROP_ALIGN, ALIGN_CENTER);
@@ -622,7 +627,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, reverseBtnName, OBJPROP_XSIZE, deleteReverseBtnWidth);
    ObjectSetInteger(0, reverseBtnName, OBJPROP_YSIZE, buttonHeightR7);
    ObjectSetString(0, reverseBtnName, OBJPROP_TEXT, "REVERSE");
-   ObjectSetInteger(0, reverseBtnName, OBJPROP_FONTSIZE, 8); // Reducir tamaño fuente
+   ObjectSetInteger(0, reverseBtnName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, reverseBtnName, OBJPROP_BGCOLOR, C'60,60,80');
    ObjectSetInteger(0, reverseBtnName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, reverseBtnName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -642,7 +647,7 @@ bool CTradeView::CreateControls()
    ObjectSetInteger(0, footerLeftName, OBJPROP_YDISTANCE, m_viewY + footerY + footerLabelYOffset);
    ObjectSetString(0, footerLeftName, OBJPROP_TEXT, "traderwaves.com");
    ObjectSetInteger(0, footerLeftName, OBJPROP_COLOR, clrGray);
-   ObjectSetInteger(0, footerLeftName, OBJPROP_FONTSIZE, 8);
+   ObjectSetInteger(0, footerLeftName, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, footerLeftName, OBJPROP_BACK, false);
    ObjectSetInteger(0, footerLeftName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
    AddObjectName(footerLeftName);
@@ -655,7 +660,7 @@ bool CTradeView::CreateControls()
    ObjectSetString(0, footerRightName, OBJPROP_TEXT, "DashPro"); // Placeholder - usa imagen si la tienes
    ObjectSetInteger(0, footerRightName, OBJPROP_ANCHOR, ANCHOR_RIGHT_UPPER); // Anclar a la esquina superior derecha
    ObjectSetInteger(0, footerRightName, OBJPROP_COLOR, clrLightBlue); // Color ejemplo
-   ObjectSetInteger(0, footerRightName, OBJPROP_FONTSIZE, 9);
+   ObjectSetInteger(0, footerRightName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, footerRightName, OBJPROP_BACK, false);
    ObjectSetInteger(0, footerRightName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
    AddObjectName(footerRightName);
@@ -680,6 +685,7 @@ bool CTradeView::CreateLotCalcButton(int x, int y)
    ObjectSetString(0, name, OBJPROP_TEXT, "Lot Calc");
    ObjectSetInteger(0, name, OBJPROP_BGCOLOR, C'80,80,100'); // Color ejemplo
    ObjectSetInteger(0, name, OBJPROP_COLOR, clrWhite);
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, clrGray);
    ObjectSetInteger(0, name, OBJPROP_STATE, false);
    ObjectSetInteger(0, name, OBJPROP_BACK, false);
@@ -707,6 +713,7 @@ bool CTradeView::CreateSizeSelector(int x, int y)
    ObjectSetString(0, name, OBJPROP_TEXT, "Size: $ Currency    ▼"); 
    ObjectSetInteger(0, name, OBJPROP_BGCOLOR, C'60,60,80'); // Color ejemplo
    ObjectSetInteger(0, name, OBJPROP_COLOR, clrWhite);
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, clrGray);
    ObjectSetInteger(0, name, OBJPROP_STATE, false);
    ObjectSetInteger(0, name, OBJPROP_BACK, false);
@@ -736,6 +743,7 @@ bool CTradeView::CreateValueInput(int x, int y)
    ObjectSetInteger(0, editName, OBJPROP_YSIZE, controlHeight);
    ObjectSetString(0, editName, OBJPROP_TEXT, "5.00");
    ObjectSetInteger(0, editName, OBJPROP_BGCOLOR, clrWhite);
+   ObjectSetInteger(0, editName, OBJPROP_FONTSIZE, 8); // Reducir tamaño fuente
    ObjectSetInteger(0, editName, OBJPROP_COLOR, clrBlack);
    ObjectSetInteger(0, editName, OBJPROP_BORDER_COLOR, clrGray);
    ObjectSetInteger(0, editName, OBJPROP_ALIGN, ALIGN_RIGHT); // Alinear texto a la derecha
@@ -752,7 +760,7 @@ bool CTradeView::CreateValueInput(int x, int y)
    ObjectSetInteger(0, upName, OBJPROP_XSIZE, buttonWidth);
    ObjectSetInteger(0, upName, OBJPROP_YSIZE, controlHeight / 2); // Mitad de altura
    ObjectSetString(0, upName, OBJPROP_TEXT, "▲"); // Flecha arriba
-   ObjectSetInteger(0, upName, OBJPROP_FONTSIZE, 8);
+   ObjectSetInteger(0, upName, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, upName, OBJPROP_BGCOLOR, C'90,90,110');
    ObjectSetInteger(0, upName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, upName, OBJPROP_BORDER_COLOR, clrGray);
@@ -769,7 +777,7 @@ bool CTradeView::CreateValueInput(int x, int y)
    ObjectSetInteger(0, downName, OBJPROP_XSIZE, buttonWidth);
    ObjectSetInteger(0, downName, OBJPROP_YSIZE, controlHeight / 2); // Mitad de altura
    ObjectSetString(0, downName, OBJPROP_TEXT, "▼"); // Flecha abajo
-   ObjectSetInteger(0, downName, OBJPROP_FONTSIZE, 8);
+   ObjectSetInteger(0, downName, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, downName, OBJPROP_BGCOLOR, C'90,90,110');
    ObjectSetInteger(0, downName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, downName, OBJPROP_BORDER_COLOR, clrGray);
@@ -838,7 +846,7 @@ bool CTradeView::CreateLotsInput(int x, int y)
    ObjectSetInteger(0, upName, OBJPROP_XSIZE, buttonWidth);
    ObjectSetInteger(0, upName, OBJPROP_YSIZE, controlHeight / 2);
    ObjectSetString(0, upName, OBJPROP_TEXT, "▲");
-   ObjectSetInteger(0, upName, OBJPROP_FONTSIZE, 8);
+   ObjectSetInteger(0, upName, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, upName, OBJPROP_BGCOLOR, C'70,70,85');
    ObjectSetInteger(0, upName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, upName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -855,7 +863,7 @@ bool CTradeView::CreateLotsInput(int x, int y)
    ObjectSetInteger(0, downName, OBJPROP_XSIZE, buttonWidth);
    ObjectSetInteger(0, downName, OBJPROP_YSIZE, controlHeight / 2);
    ObjectSetString(0, downName, OBJPROP_TEXT, "▼");
-   ObjectSetInteger(0, downName, OBJPROP_FONTSIZE, 8);
+   ObjectSetInteger(0, downName, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, downName, OBJPROP_BGCOLOR, C'70,70,85');
    ObjectSetInteger(0, downName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, downName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -873,7 +881,7 @@ bool CTradeView::CreateLotsInput(int x, int y)
 bool CTradeView::CreateMarketButton(int x, int y)
 {
    string name = MARKET_BUTTON_NAME;
-   int buttonWidth = 70;
+   int buttonWidth = 55;  // Reducido de 70 a 55
    int buttonHeight = 20;
 
    if(!ObjectCreate(0, name, OBJ_BUTTON, 0, 0, 0)) return false;
@@ -883,6 +891,7 @@ bool CTradeView::CreateMarketButton(int x, int y)
    ObjectSetInteger(0, name, OBJPROP_YSIZE, buttonHeight);
    ObjectSetString(0, name, OBJPROP_TEXT, "Market");
    ObjectSetInteger(0, name, OBJPROP_BGCOLOR, C'60,60,80'); // Color similar a Size Selector
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, name, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, C'90,90,100');
    ObjectSetInteger(0, name, OBJPROP_STATE, false);
@@ -897,7 +906,7 @@ bool CTradeView::CreateMarketButton(int x, int y)
 //+------------------------------------------------------------------+
 bool CTradeView::CreatePriceInput(int x, int y)
 {
-   int editWidth = 70;
+   int editWidth = 50; // Ajustado al nuevo priceInputWidth
    int buttonWidth = 20;
    int controlHeight = 20;
    int spacing = 1;
@@ -927,7 +936,7 @@ bool CTradeView::CreatePriceInput(int x, int y)
    ObjectSetInteger(0, upName, OBJPROP_XSIZE, buttonWidth);
    ObjectSetInteger(0, upName, OBJPROP_YSIZE, controlHeight / 2);
    ObjectSetString(0, upName, OBJPROP_TEXT, "▲");
-   ObjectSetInteger(0, upName, OBJPROP_FONTSIZE, 8);
+   ObjectSetInteger(0, upName, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, upName, OBJPROP_BGCOLOR, C'70,70,85');
    ObjectSetInteger(0, upName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, upName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -944,7 +953,7 @@ bool CTradeView::CreatePriceInput(int x, int y)
    ObjectSetInteger(0, downName, OBJPROP_XSIZE, buttonWidth);
    ObjectSetInteger(0, downName, OBJPROP_YSIZE, controlHeight / 2);
    ObjectSetString(0, downName, OBJPROP_TEXT, "▼");
-   ObjectSetInteger(0, downName, OBJPROP_FONTSIZE, 8);
+   ObjectSetInteger(0, downName, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, downName, OBJPROP_BGCOLOR, C'70,70,85');
    ObjectSetInteger(0, downName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, downName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -1015,6 +1024,7 @@ bool CTradeView::CreateCheckboxLabelPair(int x, int y, const string checkboxName
    ObjectSetInteger(0, labelName, OBJPROP_XDISTANCE, m_viewX + labelX);
    ObjectSetInteger(0, labelName, OBJPROP_YDISTANCE, m_viewY + y + labelYOffset);
    ObjectSetString(0, labelName, OBJPROP_TEXT, labelText);
+   ObjectSetInteger(0, labelName, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, labelName, OBJPROP_COLOR, clrGray);
    ObjectSetInteger(0, labelName, OBJPROP_BACK, false);
    ObjectSetInteger(0, labelName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
@@ -1030,6 +1040,14 @@ bool CTradeView::CreateValueInputWithButtons(int x, int y, const string editName
 {
    int buttonWidth = 20;
    int spacing = 1; 
+
+   // Determinar el ancho correcto basado en el nombre del objeto (para TP/SL y R:TP/R:SL)
+   if (StringFind(editName, "TPEdit") >= 0 || StringFind(editName, "SLEdit") >= 0 || 
+       StringFind(editName, "RTPEdit") >= 0 || StringFind(editName, "RSLEdit") >= 0)
+   {
+      editWidth = 40; // Usar el nuevo ancho reducido para estos inputs
+   }
+   // Para otros usos (si los hubiera) se mantiene el default de 50 o el pasado explícitamente
 
    // 1. Campo de Edición
    if(!ObjectCreate(0, editName, OBJ_EDIT, 0, 0, 0)) return false;
@@ -1054,7 +1072,7 @@ bool CTradeView::CreateValueInputWithButtons(int x, int y, const string editName
    ObjectSetInteger(0, upBtnName, OBJPROP_XSIZE, buttonWidth);
    ObjectSetInteger(0, upBtnName, OBJPROP_YSIZE, controlHeight / 2);
    ObjectSetString(0, upBtnName, OBJPROP_TEXT, "▲");
-   ObjectSetInteger(0, upBtnName, OBJPROP_FONTSIZE, 8);
+   ObjectSetInteger(0, upBtnName, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, upBtnName, OBJPROP_BGCOLOR, C'70,70,85');
    ObjectSetInteger(0, upBtnName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, upBtnName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -1070,7 +1088,7 @@ bool CTradeView::CreateValueInputWithButtons(int x, int y, const string editName
    ObjectSetInteger(0, downBtnName, OBJPROP_XSIZE, buttonWidth);
    ObjectSetInteger(0, downBtnName, OBJPROP_YSIZE, controlHeight / 2);
    ObjectSetString(0, downBtnName, OBJPROP_TEXT, "▼");
-   ObjectSetInteger(0, downBtnName, OBJPROP_FONTSIZE, 8);
+   ObjectSetInteger(0, downBtnName, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, downBtnName, OBJPROP_BGCOLOR, C'70,70,85');
    ObjectSetInteger(0, downBtnName, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, downBtnName, OBJPROP_BORDER_COLOR, C'90,90,100');
@@ -1088,7 +1106,7 @@ bool CTradeView::CreateValueInputWithButtons(int x, int y, const string editName
 bool CTradeView::CreateATRButton(int x, int y, int controlHeight=20)
 {
    string name = ATR_BUTTON_NAME;
-   int buttonWidth = 60; // Un poco más pequeño que Market
+   int buttonWidth = 50; // Ajustado al nuevo atrBtnWidth
    int buttonHeight = controlHeight;
 
    if(!ObjectCreate(0, name, OBJ_BUTTON, 0, 0, 0)) return false;
@@ -1098,6 +1116,7 @@ bool CTradeView::CreateATRButton(int x, int y, int controlHeight=20)
    ObjectSetInteger(0, name, OBJPROP_YSIZE, buttonHeight);
    ObjectSetString(0, name, OBJPROP_TEXT, "ATR");
    ObjectSetInteger(0, name, OBJPROP_BGCOLOR, C'60,60,80'); 
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 7); // Reducir tamaño fuente
    ObjectSetInteger(0, name, OBJPROP_COLOR, clrWhite);
    ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, C'90,90,100');
    ObjectSetInteger(0, name, OBJPROP_STATE, false);
@@ -1112,17 +1131,22 @@ bool CTradeView::CreateATRButton(int x, int y, int controlHeight=20)
 //+------------------------------------------------------------------+
 void CTradeView::Show()
 {
-   Print("CTradeView::Show() llamado - usando enfoque de MOVER objetos");
-   
    // Si ya está visible, no hacer nada
    if(m_visible) return;
-   
-   // Restaurar posiciones originales
-   RestoreOriginalPositions();
+   Print("Mostrando TradeView usando Timeframes");
+
+   // Hacer cada objeto visible configurando OBJPROP_TIMEFRAMES
+   for(int i = 0; i < ArraySize(m_object_names); i++)
+   {
+      if(ObjectFind(0, m_object_names[i]) >= 0) // Si el objeto existe
+      {
+         // Hacer el objeto visible en todos los periodos de tiempo
+         ObjectSetInteger(0, m_object_names[i], OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
+      }
+   }
    
    m_visible = true;
-   ChartRedraw(); // Redibujar para que los cambios sean visibles
-   Print("CTradeView::Show() completado.");
+   // ChartRedraw(); // Quitar ChartRedraw de aquí, se llamará desde el Panel
 }
 
 //+------------------------------------------------------------------+
@@ -1130,31 +1154,30 @@ void CTradeView::Show()
 //+------------------------------------------------------------------+
 void CTradeView::Hide()
 {
-   Print("CTradeView::Hide() llamado - usando enfoque de MOVER objetos");
-   
    // Si ya está oculto, no hacer nada
    if(!m_visible) return;
+   Print("Ocultando TradeView usando Timeframes");
+
+   // Guardar posiciones actuales ANTES de ocultar
+   // SaveOriginalPositions(); // Ya no es necesario guardar/restaurar aquí
    
-   // Guardar posiciones actuales primero (por si han cambiado desde Initialize())
-   SaveOriginalPositions();
-   
-   // Mover objetos fuera de la pantalla visible (-5000 es un valor arbitrario muy negativo)
+   // Ocultar cada objeto configurando OBJPROP_TIMEFRAMES
    for(int i = 0; i < ArraySize(m_object_names); i++)
    {
       if(ObjectFind(0, m_object_names[i]) >= 0) // Si el objeto existe
       {
-         Print("Moviendo objeto fuera de pantalla: '", m_object_names[i], "'");
-         ObjectSetInteger(0, m_object_names[i], OBJPROP_XDISTANCE, -5000); // Mover muy a la izquierda
+         // Ocultar el objeto en todos los periodos de tiempo
+         ObjectSetInteger(0, m_object_names[i], OBJPROP_TIMEFRAMES, OBJ_NO_PERIODS);
       }
       else
       {
-         Print("Advertencia: Objeto '", m_object_names[i], "' no encontrado para mover.");
+         // No imprimir advertencia aquí, puede ser normal si se destruyó
+         // Print("Advertencia: Objeto '", m_object_names[i], "' no encontrado para ocultar.");
       }
    }
    
    m_visible = false;
-   ChartRedraw(); // Redibujar para que los cambios sean visibles
-   Print("CTradeView::Hide() completado.");
+   // ChartRedraw(); // Quitar ChartRedraw de aquí, se llamará desde el Panel
 }
 
 //+------------------------------------------------------------------+
@@ -1240,5 +1263,43 @@ void CTradeView::ToggleCheckboxState(const string checkbox_name)
    {
       Print("Error: No se encontró el objeto checkbox '", checkbox_name, "' para actualizar.");
    }
+}
+
+//+------------------------------------------------------------------+
+//| Actualiza la posición y dimensiones de la vista completa          |
+//+------------------------------------------------------------------+
+void CTradeView::UpdatePosition(int x, int y, int width, int height)
+{
+   PrintFormat("TradeView::UpdatePosition a x=%d, y=%d, w=%d, h=%d", x, y, width, height);
+   // Calcular el desplazamiento desde la posición actual
+   int dx = x - m_viewX;
+   int dy = y - m_viewY;
+   
+   // Actualizar las dimensiones y coordenadas base de la vista
+   m_viewX = x;
+   m_viewY = y;
+   m_viewWidth = width;
+   m_viewHeight = height;
+   
+   // Si hay desplazamiento, mover todos los elementos registrados
+   if(dx != 0 || dy != 0)
+   {
+      // Mover cada objeto registrado usando el delta calculado
+      for(int i = 0; i < ArraySize(m_object_names); i++)
+      {
+         if(ObjectFind(0, m_object_names[i]) >= 0)
+         {
+            int current_x = (int)ObjectGetInteger(0, m_object_names[i], OBJPROP_XDISTANCE);
+            int current_y = (int)ObjectGetInteger(0, m_object_names[i], OBJPROP_YDISTANCE);
+            ObjectSetInteger(0, m_object_names[i], OBJPROP_XDISTANCE, current_x + dx);
+            ObjectSetInteger(0, m_object_names[i], OBJPROP_YDISTANCE, current_y + dy);
+         }
+      }
+      
+      // Guardar las nuevas posiciones como originales DESPUÉS de moverlos
+      SaveOriginalPositions();
+   }
+   
+   // Nota: El redibujado (ChartRedraw) lo hará CPanel después de llamar a UpdatePosition
 }
 //+------------------------------------------------------------------+ 

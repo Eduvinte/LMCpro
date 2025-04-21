@@ -101,8 +101,8 @@ bool CInfoPanel::CreateInfoPanel(int x, int y, int width)
    ObjectSetInteger(0, g_info_panel, OBJPROP_YDISTANCE, y);
    ObjectSetInteger(0, g_info_panel, OBJPROP_XSIZE, width);
    ObjectSetInteger(0, g_info_panel, OBJPROP_YSIZE, info_height);
-   ObjectSetInteger(0, g_info_panel, OBJPROP_BGCOLOR, COLOR_BG_PANEL);
-   ObjectSetInteger(0, g_info_panel, OBJPROP_BORDER_COLOR, COLOR_BORDER);
+   ObjectSetInteger(0, g_info_panel, OBJPROP_BGCOLOR, clrBlack);
+   ObjectSetInteger(0, g_info_panel, OBJPROP_BORDER_COLOR, clrBlack);
    ObjectSetInteger(0, g_info_panel, OBJPROP_CORNER, CORNER_LEFT_UPPER);
    ObjectSetInteger(0, g_info_panel, OBJPROP_ZORDER, 1);
    
@@ -123,7 +123,7 @@ bool CInfoPanel::CreateInfoPanel(int x, int y, int width)
    ObjectSetInteger(0, g_spread_label, OBJPROP_COLOR, COLOR_TEXT);
    ObjectSetString(0, g_spread_label, OBJPROP_TEXT, "Spread:");
    ObjectSetString(0, g_spread_label, OBJPROP_FONT, "Arial");
-   ObjectSetInteger(0, g_spread_label, OBJPROP_FONTSIZE, 9);
+   ObjectSetInteger(0, g_spread_label, OBJPROP_FONTSIZE, 8);
    ObjectSetInteger(0, g_spread_label, OBJPROP_ANCHOR, ANCHOR_LEFT);
    
    if(!ObjectCreate(0, g_spread_value, OBJ_LABEL, 0, 0, 0))
@@ -134,7 +134,7 @@ bool CInfoPanel::CreateInfoPanel(int x, int y, int width)
    ObjectSetInteger(0, g_spread_value, OBJPROP_COLOR, COLOR_TEXT);
    ObjectSetString(0, g_spread_value, OBJPROP_TEXT, "0");
    ObjectSetString(0, g_spread_value, OBJPROP_FONT, "Arial");
-   ObjectSetInteger(0, g_spread_value, OBJPROP_FONTSIZE, 9);
+   ObjectSetInteger(0, g_spread_value, OBJPROP_FONTSIZE, 8);
    ObjectSetInteger(0, g_spread_value, OBJPROP_ANCHOR, ANCHOR_LEFT);
    
    // 2. ATR - Centrado en el panel
@@ -148,7 +148,7 @@ bool CInfoPanel::CreateInfoPanel(int x, int y, int width)
    ObjectSetInteger(0, g_atr_label, OBJPROP_COLOR, COLOR_TEXT);
    ObjectSetString(0, g_atr_label, OBJPROP_TEXT, "ATR:");
    ObjectSetString(0, g_atr_label, OBJPROP_FONT, "Arial");
-   ObjectSetInteger(0, g_atr_label, OBJPROP_FONTSIZE, 9);
+   ObjectSetInteger(0, g_atr_label, OBJPROP_FONTSIZE, 7);
    ObjectSetInteger(0, g_atr_label, OBJPROP_ANCHOR, ANCHOR_LEFT);
    
    if(!ObjectCreate(0, g_atr_value, OBJ_LABEL, 0, 0, 0))
@@ -159,7 +159,7 @@ bool CInfoPanel::CreateInfoPanel(int x, int y, int width)
    ObjectSetInteger(0, g_atr_value, OBJPROP_COLOR, COLOR_TEXT);
    ObjectSetString(0, g_atr_value, OBJPROP_TEXT, "0");
    ObjectSetString(0, g_atr_value, OBJPROP_FONT, "Arial");
-   ObjectSetInteger(0, g_atr_value, OBJPROP_FONTSIZE, 9);
+   ObjectSetInteger(0, g_atr_value, OBJPROP_FONTSIZE, 8);
    ObjectSetInteger(0, g_atr_value, OBJPROP_ANCHOR, ANCHOR_LEFT);
    
    // 3. El engranaje en la tercera sección

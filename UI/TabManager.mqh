@@ -58,6 +58,9 @@ public:
    //--- Actualización y destrucción
    void              MoveTabs(int dx, int dy); // Mueve las pestañas con el panel
    void              Destroy();          // Elimina los objetos de las pestañas
+   void              ShowTabs();         // <-- AÑADIR ESTA LÍNEA
+   void              HideTabs();         // <-- AÑADIR ESTA LÍNEA
+   int               GetHeight() const { return m_tab_button_height; } // <-- AÑADIR ESTA LÍNEA (útil para calcular layout)
 };
 
 //+------------------------------------------------------------------+
@@ -93,7 +96,7 @@ bool CTabManager::Initialize(int panel_x, int panel_y_below_title, int panel_wid
    m_panel_x = panel_x;
    m_panel_y = panel_y_below_title; // Esta será la Y justo debajo de la barra de título
    m_panel_width = panel_width;
-   m_tab_button_y = m_panel_y; // Las pestañas empiezan justo debajo
+   m_tab_button_y = m_panel_y - 7; // Las pestañas empiezan 5px más arriba
 
    // Calculamos el ancho de cada botón (distribución equitativa, podrías ajustarlo)
    // Quitamos el margen de 10px para que ocupen todo el ancho
@@ -135,7 +138,7 @@ bool CTabManager::CreateTabButton(const string name, const string text, const in
    ObjectSetString(0, name, OBJPROP_TEXT, text);
    ObjectSetInteger(0, name, OBJPROP_COLOR, clrWhite); // Color del texto
    // Los colores de fondo se manejarán en UpdateButtonStyles
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 10); // Ajusta según necesites
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 7); // Ajusta según necesites
    ObjectSetString(0, name, OBJPROP_FONT, "Arial");
    ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, COLOR_BORDER); // Usar color de borde global o del tema
    ObjectSetInteger(0, name, OBJPROP_STATE, false); // Estado inicial no presionado
@@ -222,6 +225,38 @@ void CTabManager::Destroy()
    for(int i = 0; i < 3; i++)
    {
       ObjectDelete(0, m_button_names[i]);
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Muestra los botones de pestaña                                    |
+//+------------------------------------------------------------------+
+void CTabManager::ShowTabs()
+{
+   Print("Mostrando pestañas");
+   for(int i = 0; i < 3; i++)
+   {
+      // Comprobar si el objeto existe antes de intentar modificarlo
+      if(ObjectFind(0, m_button_names[i]) >= 0)
+      {
+         ObjectSetInteger(0, m_button_names[i], OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Oculta los botones de pestaña                                     |
+//+------------------------------------------------------------------+
+void CTabManager::HideTabs()
+{
+   Print("Ocultando pestañas");
+   for(int i = 0; i < 3; i++)
+   {
+      // Comprobar si el objeto existe antes de intentar modificarlo
+      if(ObjectFind(0, m_button_names[i]) >= 0)
+      {
+         ObjectSetInteger(0, m_button_names[i], OBJPROP_TIMEFRAMES, OBJ_NO_PERIODS);
+      }
    }
 }
 //+------------------------------------------------------------------+ 
